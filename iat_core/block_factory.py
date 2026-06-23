@@ -262,10 +262,10 @@ class IATBlockFactory:
         trials = cls._make_trials(
             stimuli=stimuli,
             counts=(
-                (StimulusCategory.TARGET, 6),
-                (StimulusCategory.NEUTRAL, 6),
-                (StimulusCategory.POSITIVE, 6),
-                (StimulusCategory.NEGATIVE, 6),
+                (StimulusCategory.TARGET, 7),
+                (StimulusCategory.NEUTRAL, 7),
+                (StimulusCategory.POSITIVE, 7),
+                (StimulusCategory.NEGATIVE, 7),
             ),
             left_categories=left_categories,
             rng=rng,

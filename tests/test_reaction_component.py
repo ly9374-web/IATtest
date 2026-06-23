@@ -102,6 +102,15 @@ class ReactionLayoutTests(unittest.TestCase):
             source,
         )
 
+    def test_response_buttons_do_not_handle_mouse_clicks(self) -> None:
+        html = (
+            Path("components/reaction_task/frontend/index.html")
+            .read_text(encoding="utf-8")
+        )
+        self.assertNotIn('keyS.addEventListener("click"', html)
+        self.assertNotIn('keyJ.addEventListener("click"', html)
+        self.assertIn('document.addEventListener("keydown", onKeyDown)', html)
+
 
 if __name__ == "__main__":
     unittest.main()
