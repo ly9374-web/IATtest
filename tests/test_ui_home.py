@@ -11,33 +11,38 @@ class HomePageTests(unittest.TestCase):
     def setUp(self) -> None:
         self.app = AppTest.from_file("app.py").run(timeout=10)
 
-    def test_home_components_and_start_disabled_state(self) -> None:
+    def test_home_components_and_single_submit_flow(self) -> None:
         self.assertEqual(len(self.app.exception), 0)
         self.assertEqual(
             [(button.label, button.disabled) for button in self.app.button],
-            [("开始", True), ("自定义", False)],
+            [("开始", False), ("自定义", False)],
         )
         self.assertEqual(
             self.app.text_input(key="concept_input").placeholder,
             "输入测试目标（例如：环保）",
         )
 
-        self.app.text_input(key="concept_input").set_value("环保").run()
-        self.assertFalse(self.app.button(key="home_start").disabled)
+        self.app.button(key="home_start").click().run()
+        self.assertEqual(self.app.session_state["page"], "home")
+
+        self.app.text_input(key="concept_input").set_value("环保")
+        self.app.button(key="home_start").click().run()
+        self.assertEqual(self.app.session_state["page"], "instruction")
+        self.assertEqual(self.app.session_state["concept_text"], "环保")
 
     def test_custom_dialog_components(self) -> None:
         self.app.button(key="home_custom").click().run()
         self.assertEqual(len(self.app.exception), 0)
         self.assertEqual(
             [area.placeholder for area in self.app.text_area],
-            ["正面（输入正面匹配词）", "负面（输入负面匹配词）"],
+            ["正面词汇（输入正面词汇匹配词）", "负面词汇（输入负面词汇匹配词）"],
         )
         self.assertEqual(
             [
                 self.app.text_input(key="custom_yy_text").placeholder,
                 self.app.text_input(key="custom_zz_text").placeholder,
             ],
-            ["yy（正面更快）", "zz（负面更快）"],
+            ["yy（正面词汇更快）", "zz（负面词汇更快）"],
         )
         self.assertEqual(
             [

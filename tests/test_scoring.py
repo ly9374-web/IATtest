@@ -169,10 +169,10 @@ class ReportTests(unittest.TestCase):
 
         self.assertEqual(compatible.id, 7)
         self.assertIn("环保", compatible.left_label)
-        self.assertIn("正面", compatible.left_label)
+        self.assertIn("正面词汇", compatible.left_label)
         self.assertEqual(incompatible.id, 4)
         self.assertIn("环保", incompatible.right_label)
-        self.assertIn("负面", incompatible.right_label)
+        self.assertIn("负面词汇", incompatible.right_label)
 
         for trial_index, trial in enumerate(compatible.trials):
             session.record_response(

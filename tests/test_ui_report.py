@@ -121,15 +121,18 @@ class ReportPresentationTests(unittest.TestCase):
         self.assertIn("1000 ms / 50.0%", joined)
         self.assertIn("|D|：0.40 (中等偏好)", joined)
 
-        html_nodes = app.get("html")
-        self.assertEqual(len(html_nodes), 1)
-        self.assertIn('data-point-count="4"', html_nodes[0].proto.body)
-
         components = app.get("component_instance")
         self.assertEqual(len(components), 1)
         args = json.loads(components[0].proto.json_args)
         self.assertEqual(args["csv_text"], fixed_report().csv_text)
         self.assertEqual(args["json_text"], fixed_report().json_text)
+
+        iframe_nodes = app.get("iframe")
+        self.assertEqual(len(iframe_nodes), 1)
+        self.assertIn(
+            "data-point-count%3D%224%22",
+            iframe_nodes[0].proto.src,
+        )
 
         self.assertEqual(app.button(key="report_retest").label, "重新测试")
 

@@ -142,7 +142,7 @@ class ExportBuilder:
         if category is StimulusCategory.TARGET:
             return concept
         if category is StimulusCategory.NEUTRAL:
-            return "其他"
+            return "中性词汇"
         if category is StimulusCategory.POSITIVE:
             return "正"
         return "负"

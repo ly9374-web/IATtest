@@ -1,6 +1,49 @@
 export const EVENT_VERSION = 1;
 export const TRANSITION_MS = 300;
 
+export function highlightInstructionSegments(text, concept) {
+  const keywords = [
+    "正面词汇",
+    "中性词汇",
+    "负面词汇",
+    String(concept ?? "").trim(),
+  ]
+    .filter(Boolean)
+    .sort((a, b) => b.length - a.length);
+  const segments = [];
+  let position = 0;
+
+  while (position < text.length) {
+    let nextIndex = -1;
+    let nextKeyword = "";
+    for (const keyword of keywords) {
+      const index = text.indexOf(keyword, position);
+      if (
+        index !== -1 &&
+        (nextIndex === -1 ||
+          index < nextIndex ||
+          (index === nextIndex && keyword.length > nextKeyword.length))
+      ) {
+        nextIndex = index;
+        nextKeyword = keyword;
+      }
+    }
+    if (nextIndex === -1) {
+      segments.push({ text: text.slice(position), emphasized: false });
+      break;
+    }
+    if (nextIndex > position) {
+      segments.push({
+        text: text.slice(position, nextIndex),
+        emphasized: false,
+      });
+    }
+    segments.push({ text: nextKeyword, emphasized: true });
+    position = nextIndex + nextKeyword.length;
+  }
+  return segments;
+}
+
 export class ReactionState {
   constructor({
     now = () => performance.now(),
@@ -21,6 +64,7 @@ export class ReactionState {
     this.blockTitle = "";
     this.blockInstruction = "";
     this.blockCount = 0;
+    this.concept = "";
     this.correctKey = "J";
     this.enabled = false;
     this.blockIntroOpen = true;
@@ -45,6 +89,7 @@ export class ReactionState {
     this.blockTitle = String(args.block_title ?? "");
     this.blockInstruction = String(args.block_instruction ?? "");
     this.blockCount = Number(args.block_count ?? 0);
+    this.concept = String(args.concept ?? "");
     this.correctKey = String(args.correct_key ?? "J").toUpperCase();
     this.enabled = Boolean(args.enabled);
     this.blockIntroOpen = Boolean(args.block_intro_open);
@@ -183,6 +228,7 @@ export class ReactionState {
       blockTitle: this.blockTitle,
       blockInstruction: this.blockInstruction,
       blockCount: this.blockCount,
+      concept: this.concept,
       elapsedMs:
         this.firstRtMs !== null
           ? this.firstRtMs

@@ -157,13 +157,13 @@ class BlockInstructionTests(unittest.TestCase):
         self.assertEqual(
             [block_instruction_text(block, "环保") for block in session.blocks],
             [
-                "其他按 S，环保 按 J",
-                "正面按 S，负面按 J",
-                "其他和正面按 S，环保 和负面按 J",
-                "其他和正面按 S，环保 和负面按 J",
-                "环保 按 S，其他按 J",
-                "环保 和正面按 S，其他和负面按 J",
-                "环保 和正面按 S，其他和负面按 J",
+                "中性词汇按 S，环保 按 J",
+                "正面词汇按 S，负面词汇按 J",
+                "中性词汇和正面词汇按 S，环保 和负面词汇按 J",
+                "中性词汇和正面词汇按 S，环保 和负面词汇按 J",
+                "环保 按 S，中性词汇按 J",
+                "环保 和正面词汇按 S，中性词汇和负面词汇按 J",
+                "环保 和正面词汇按 S，中性词汇和负面词汇按 J",
             ],
         )
 

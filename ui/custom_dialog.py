@@ -73,15 +73,15 @@ def render_custom_dialog(store: CustomPresetStore) -> None:
     st.markdown('<div class="iat-dialog-spacer-16"></div>', unsafe_allow_html=True)
 
     st.text_area(
-        "正面",
-        placeholder="正面（输入正面匹配词）",
+        "正面词汇",
+        placeholder="正面词汇（输入正面词汇匹配词）",
         key="custom_positive_text",
         label_visibility="collapsed",
     )
     st.markdown('<div class="iat-dialog-spacer-12"></div>', unsafe_allow_html=True)
     st.text_area(
-        "负面",
-        placeholder="负面（输入负面匹配词）",
+        "负面词汇",
+        placeholder="负面词汇（输入负面词汇匹配词）",
         key="custom_negative_text",
         label_visibility="collapsed",
     )
@@ -92,7 +92,7 @@ def render_custom_dialog(store: CustomPresetStore) -> None:
     with yy_column:
         st.text_input(
             "yy",
-            placeholder="yy（正面更快）",
+            placeholder="yy（正面词汇更快）",
             key="custom_yy_text",
             disabled=is_selected,
             label_visibility="collapsed",
@@ -100,7 +100,7 @@ def render_custom_dialog(store: CustomPresetStore) -> None:
     with zz_column:
         st.text_input(
             "zz",
-            placeholder="zz（负面更快）",
+            placeholder="zz（负面词汇更快）",
             key="custom_zz_text",
             disabled=is_selected,
             label_visibility="collapsed",

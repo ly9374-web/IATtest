@@ -53,6 +53,10 @@ def apply_global_styles() -> None:
             padding: 0 24px;
         }
 
+        .iat-task-block-title {
+            font-weight: 400;
+        }
+
         .st-key-home_shell {
             width: min(100%, 760px);
             margin: 0 auto;
@@ -286,14 +290,16 @@ def apply_global_styles() -> None:
         }
 
         .st-key-report_retest_container {
-            position: fixed;
-            right: 9px;
-            bottom: 24px;
-            z-index: 20;
+            width: 120px;
+            margin: 20px 0 0 auto;
+        }
+
+        .st-key-report_retest_container .stButton {
+            width: 120px;
         }
 
         .st-key-report_retest_container button {
-            min-width: 120px;
+            width: 120px !important;
             height: 44px;
         }
 

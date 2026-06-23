@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { ReactionState, TRANSITION_MS } from "./reaction_state.mjs";
+import {
+  ReactionState,
+  TRANSITION_MS,
+  highlightInstructionSegments,
+} from "./reaction_state.mjs";
 
 function harness() {
   let time = 1000;
@@ -21,6 +25,36 @@ function harness() {
     },
   };
 }
+
+test("instruction keywords and concept are emphasized", () => {
+  const segments = highlightInstructionSegments(
+    "中性词汇和正面词汇按 S，环保 和负面词汇按 J",
+    "环保",
+  );
+  assert.deepEqual(
+    segments
+      .filter((item) => item.emphasized)
+      .map((item) => item.text),
+    ["中性词汇", "正面词汇", "环保", "负面词汇"],
+  );
+  assert.equal(
+    segments.map((item) => item.text).join(""),
+    "中性词汇和正面词汇按 S，环保 和负面词汇按 J",
+  );
+});
+
+test("swapped target concept remains emphasized", () => {
+  const segments = highlightInstructionSegments(
+    "环保 和正面词汇按 S，中性词汇和负面词汇按 J",
+    "环保",
+  );
+  assert.deepEqual(
+    segments
+      .filter((item) => item.emphasized)
+      .map((item) => item.text),
+    ["环保", "正面词汇", "中性词汇", "负面词汇"],
+  );
+});
 
 test("blocked states reject S/J and repeat events", () => {
   const h = harness();

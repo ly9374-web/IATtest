@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from urllib.parse import quote
 
 import streamlit as st
 
@@ -48,4 +49,39 @@ def build_scatter_svg(
 
 
 def render_scatter_plot(points: Sequence[ScatterPoint]) -> None:
-    st.html(build_scatter_svg(points))
+    document = (
+        """
+        <!doctype html>
+        <html lang="zh-CN">
+        <head>
+            <meta charset="utf-8">
+            <style>
+                html, body {
+                    margin: 0;
+                    padding: 0;
+                    overflow: hidden;
+                    background: transparent;
+                }
+                .iat-scatter-chart {
+                    width: 100%;
+                    height: 240px;
+                }
+                .iat-scatter-chart svg {
+                    display: block;
+                    width: 100%;
+                    height: 240px;
+                }
+            </style>
+        </head>
+        <body>
+        """
+        + build_scatter_svg(points)
+        + """
+        </body>
+        </html>
+        """
+    )
+    st.iframe(
+        "data:text/html;charset=utf-8," + quote(document),
+        height=240,
+    )

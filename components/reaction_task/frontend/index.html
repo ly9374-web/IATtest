@@ -167,12 +167,17 @@
       #block-title {
         font-size: 24px;
         line-height: 29px;
-        font-weight: 600;
+        font-weight: 400;
       }
       #block-instruction {
         margin-top: 16px;
         font-size: 22px;
         line-height: 1.35;
+        color: #000;
+      }
+      .instruction-emphasis {
+        color: #000;
+        font-weight: 700;
       }
       #block-count {
         margin-top: 16px;
@@ -230,7 +235,10 @@
       </div>
     </main>
     <script type="module">
-      import { ReactionState } from "./reaction_state.mjs";
+      import {
+        ReactionState,
+        highlightInstructionSegments,
+      } from "./reaction_state.mjs";
 
       const surface = document.getElementById("surface");
       const stimulus = document.getElementById("stimulus");
@@ -264,7 +272,10 @@
         keyS.disabled = !state.canAccept();
         keyJ.disabled = !state.canAccept();
         blockTitle.textContent = snapshot.blockTitle;
-        blockInstruction.textContent = snapshot.blockInstruction;
+        renderBlockInstruction(
+          snapshot.blockInstruction,
+          snapshot.concept,
+        );
         blockCount.textContent = `本轮题数：${snapshot.blockCount}`;
         blockIntro.classList.toggle("visible", state.blockIntroOpen);
         skipBlock.disabled = state.blockIntroOpen;
@@ -276,6 +287,19 @@
 
       state.onEvent = sendValue;
       state.onStateChange = render;
+
+      function renderBlockInstruction(text, concept) {
+        blockInstruction.replaceChildren(
+          ...highlightInstructionSegments(text, concept).map((segment) => {
+            const node = document.createElement("span");
+            node.textContent = segment.text;
+            if (segment.emphasized) {
+              node.className = "instruction-emphasis";
+            }
+            return node;
+          }),
+        );
+      }
 
       function onKeyDown(event) {
         if (

@@ -22,7 +22,11 @@ def render_task() -> None:
     trial = progress.current_trial(session)
 
     st.markdown(
-        f'<div class="iat-nav-title">{block.title}</div>',
+        (
+            '<div class="iat-nav-title iat-task-block-title">'
+            f"{block.title}"
+            "</div>"
+        ),
         unsafe_allow_html=True,
     )
 
@@ -37,6 +41,7 @@ def render_task() -> None:
             block_title=block.title,
             block_instruction=block_instruction_text(block, session.concept),
             block_count=len(block.trials),
+            concept=session.concept,
             enabled=True,
             block_intro_open=progress.show_block_intro,
             transitioning=False,

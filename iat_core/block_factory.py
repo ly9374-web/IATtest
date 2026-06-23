@@ -151,7 +151,7 @@ class IATBlockFactory:
         return IATBlock(
             id=1,
             title="Block 1：目标分类练习",
-            left_label="其他",
+            left_label="中性词汇",
             right_label=stimuli.concept,
             type=BlockType.TARGET_PRACTICE,
             trials=trials,
@@ -176,8 +176,8 @@ class IATBlockFactory:
         return IATBlock(
             id=2,
             title="Block 2：属性分类练习",
-            left_label="正面",
-            right_label="负面",
+            left_label="正面词汇",
+            right_label="负面词汇",
             type=BlockType.ATTRIBUTE_PRACTICE,
             trials=trials,
         )
@@ -192,15 +192,15 @@ class IATBlockFactory:
     ) -> IATBlock:
         del target_left
         if target_with_positive:
-            left_label = f"{stimuli.concept} + 正面"
-            right_label = "其他 + 负面"
+            left_label = f"{stimuli.concept} + 正面词汇"
+            right_label = "中性词汇 + 负面词汇"
             left_categories = {
                 StimulusCategory.TARGET,
                 StimulusCategory.POSITIVE,
             }
         else:
-            left_label = "其他 + 正面"
-            right_label = f"{stimuli.concept} + 负面"
+            left_label = "中性词汇 + 正面词汇"
+            right_label = f"{stimuli.concept} + 负面词汇"
             left_categories = {
                 StimulusCategory.NEUTRAL,
                 StimulusCategory.POSITIVE,
@@ -245,15 +245,15 @@ class IATBlockFactory:
     ) -> IATBlock:
         del target_left
         if target_with_positive:
-            left_label = f"{stimuli.concept} + 正面"
-            right_label = "其他 + 负面"
+            left_label = f"{stimuli.concept} + 正面词汇"
+            right_label = "中性词汇 + 负面词汇"
             left_categories = {
                 StimulusCategory.TARGET,
                 StimulusCategory.POSITIVE,
             }
         else:
-            left_label = "其他 + 正面"
-            right_label = f"{stimuli.concept} + 负面"
+            left_label = "中性词汇 + 正面词汇"
+            right_label = f"{stimuli.concept} + 负面词汇"
             left_categories = {
                 StimulusCategory.NEUTRAL,
                 StimulusCategory.POSITIVE,
@@ -262,10 +262,10 @@ class IATBlockFactory:
         trials = cls._make_trials(
             stimuli=stimuli,
             counts=(
-                (StimulusCategory.TARGET, 4),
-                (StimulusCategory.NEUTRAL, 4),
-                (StimulusCategory.POSITIVE, 4),
-                (StimulusCategory.NEGATIVE, 3),
+                (StimulusCategory.TARGET, 6),
+                (StimulusCategory.NEUTRAL, 6),
+                (StimulusCategory.POSITIVE, 6),
+                (StimulusCategory.NEGATIVE, 6),
             ),
             left_categories=left_categories,
             rng=rng,
@@ -299,8 +299,8 @@ class IATBlockFactory:
         trials = cls._make_trials(
             stimuli=stimuli,
             counts=(
-                (StimulusCategory.TARGET, 5),
-                (StimulusCategory.NEUTRAL, 5),
+                (StimulusCategory.TARGET, 8),
+                (StimulusCategory.NEUTRAL, 7),
             ),
             left_categories={StimulusCategory.TARGET},
             rng=rng,
@@ -310,7 +310,7 @@ class IATBlockFactory:
             id=5,
             title="Block 5：目标换位练习",
             left_label=stimuli.concept,
-            right_label="其他",
+            right_label="中性词汇",
             type=BlockType.TARGET_SWAP_PRACTICE,
             trials=trials,
         )

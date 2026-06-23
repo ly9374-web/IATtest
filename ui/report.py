@@ -92,11 +92,11 @@ def render_report() -> None:
             _stat_row("兼容正确率", report.compatible_accuracy_string)
             _stat_row("不兼容正确率", report.incompatible_accuracy_string)
             _stat_row(
-                f"当 {session.concept} 与正面词汇配对时你的反应速度/错误率",
+                f"当 {session.concept} 与正面词汇词汇配对时你的反应速度/错误率",
                 report.compatible_summary_string,
             )
             _stat_row(
-                f"当 {session.concept} 与负面词汇配对时你的反应速度/错误率",
+                f"当 {session.concept} 与负面词汇词汇配对时你的反应速度/错误率",
                 report.incompatible_summary_string,
             )
             _stat_row(

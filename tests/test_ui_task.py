@@ -60,6 +60,7 @@ class TaskPageTests(unittest.TestCase):
         self.assertTrue(args["block_intro_open"])
         self.assertEqual(args["block_title"], "Block 1：目标分类练习")
         self.assertEqual(args["block_count"], 8)
+        self.assertEqual(args["concept"], "环保")
 
         self._send(
             app,

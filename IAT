@@ -210,17 +210,17 @@ private struct CustomSheetView: View {
                 .fontWeight(.semibold)
 
             VStack(spacing: 12) {
-                TextField("正面（输入正面匹配词）", text: $positiveText, axis: .vertical)
+                TextField("正面词汇（输入正面词汇匹配词）", text: $positiveText, axis: .vertical)
                     .textFieldStyle(.roundedBorder)
 
-                TextField("负面（输入负面匹配词）", text: $negativeText, axis: .vertical)
+                TextField("负面词汇（输入负面词汇匹配词）", text: $negativeText, axis: .vertical)
                     .textFieldStyle(.roundedBorder)
 
                 HStack(spacing: 12) {
-                    TextField("yy（正面更快）", text: $yyText)
+                    TextField("yy（正面词汇更快）", text: $yyText)
                         .textFieldStyle(.roundedBorder)
                         .disabled(selectedPresetId != nil)
-                    TextField("zz（负面更快）", text: $zzText)
+                    TextField("zz（负面词汇更快）", text: $zzText)
                         .textFieldStyle(.roundedBorder)
                         .disabled(selectedPresetId != nil)
                 }
@@ -541,15 +541,15 @@ private struct TaskView: View {
     private func blockInstructionText(block: IATBlock, concept: String) -> String {
         switch block.id {
         case 1:
-            return "其他按 S，\(concept) 按 J"
+            return "中性词汇 按 S，\(concept) 按 J"
         case 2:
-            return "正面按 S，负面按 J"
+            return "正面词汇词汇 按 S，负面词汇按 J"
         case 3, 4:
-            return "其他和正面按 S，\(concept) 和负面按 J"
+            return "中性词汇/正面词汇词汇 按 S，\(concept) 和负面词汇按 J"
         case 5:
-            return "\(concept) 按 S，其他按 J"
+            return "\(concept) 按 S，中性词汇 按 J"
         case 6, 7:
-            return "\(concept) 和正面按 S，其他和负面按 J"
+            return "\(concept) 和正面词汇词汇按 S，中性词汇/负面词汇词汇按 J"
         default:
             return "当出现 \(block.leftLabel) 时按 “S”，当出现 \(block.rightLabel) 时按 “J”。"
         }
@@ -663,8 +663,8 @@ private struct ReportView: View {
                     StatRow(title: "不兼容表情变化度", value: "待定")
                     StatRow(title: "兼容正确率", value: report.compatibleAccuracyString)
                     StatRow(title: "不兼容正确率", value: report.incompatibleAccuracyString)
-                    StatRow(title: "当 \(concept) 与正面词汇配对时你的反应速度/错误率", value: report.compatibleSummaryString)
-                    StatRow(title: "当 \(concept) 与负面词汇配对时你的反应速度/错误率", value: report.incompatibleSummaryString)
+                    StatRow(title: "当 \(concept) 与正面词汇词汇配对时你的反应速度/错误率", value: report.compatibleSummaryString)
+                    StatRow(title: "当 \(concept) 与负面词汇词汇配对时你的反应速度/错误率", value: report.incompatibleSummaryString)
                     StatRow(title: "D 值", value: dScoreDisplayText)
                 }
 
@@ -951,7 +951,7 @@ private enum IATBlockFactory {
         targetLeft: Bool,
         rng: inout SeededRandomNumberGenerator
     ) -> IATBlock {
-        let leftLabel = "其他"
+        let leftLabel = "中性词汇"
         let rightLabel = stimuli.concept
         let trials = makeTrials(
             stimuli: stimuli,
@@ -974,7 +974,7 @@ private enum IATBlockFactory {
             rng: &rng,
             avoidRepeat: false
         )
-        return IATBlock(id: 2, title: "Block 2：属性分类练习", leftLabel: "正面", rightLabel: "负面", type: .attributePractice, trials: trials)
+        return IATBlock(id: 2, title: "Block 2：属性分类练习", leftLabel: "正面词汇", rightLabel: "负面词汇", type: .attributePractice, trials: trials)
     }
 
     private static func makeCombinedPractice(
@@ -988,12 +988,12 @@ private enum IATBlockFactory {
         let rightLabel: String
         let leftCats: Set<StimulusCategory>
         if isCompatible {
-            leftLabel = "其他 + 正面"
-            rightLabel = "\(stimuli.concept) + 负面"
+            leftLabel = "中性词汇 + 正面词汇"
+            rightLabel = "\(stimuli.concept) + 负面词汇"
             leftCats = [.neutral, .positive]
         } else {
-            leftLabel = "\(stimuli.concept) + 正面"
-            rightLabel = "其他 + 负面"
+            leftLabel = "\(stimuli.concept) + 正面词汇"
+            rightLabel = "中性词汇 + 负面词汇"
             leftCats = [.target, .positive]
         }
         let counts: [(StimulusCategory, Int)] = [(.target, 3), (.neutral, 3), (.positive, 2), (.negative, 2)]
@@ -1018,12 +1018,12 @@ private enum IATBlockFactory {
         let rightLabel: String
         let leftCats: Set<StimulusCategory>
         if isCompatible {
-            leftLabel = "其他 + 正面"
-            rightLabel = "\(stimuli.concept) + 负面"
+            leftLabel = "中性词汇 + 正面词汇"
+            rightLabel = "\(stimuli.concept) + 负面词汇"
             leftCats = [.neutral, .positive]
         } else {
-            leftLabel = "\(stimuli.concept) + 正面"
-            rightLabel = "其他 + 负面"
+            leftLabel = "\(stimuli.concept) + 正面词汇"
+            rightLabel = "中性词汇 + 负面词汇"
             leftCats = [.target, .positive]
         }
         let counts: [(StimulusCategory, Int)] = [(.target, 4), (.neutral, 4), (.positive, 4), (.negative, 3)]
@@ -1043,7 +1043,7 @@ private enum IATBlockFactory {
         rng: inout SeededRandomNumberGenerator
     ) -> IATBlock {
         let leftLabel = stimuli.concept
-        let rightLabel = "其他"
+        let rightLabel = "中性词汇"
         let trials = makeTrials(
             stimuli: stimuli,
             counts: [(.target, 5), (.neutral, 5)],
@@ -1461,7 +1461,7 @@ private enum ExportBuilder {
         case .target:
             return concept
         case .neutral:
-            return "其他"
+            return "中性词汇"
         case .positive:
             return "正"
         case .negative:

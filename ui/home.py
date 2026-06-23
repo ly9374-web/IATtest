@@ -9,10 +9,6 @@ from .custom_dialog import render_custom_dialog
 from .state import resolved_custom_config
 
 
-def _sync_concept_text() -> None:
-    st.session_state.concept_text = st.session_state.concept_input
-
-
 def _spacer(size: int) -> None:
     st.markdown(
         f'<div class="iat-spacer-{size}"></div>',
@@ -29,29 +25,36 @@ def render_home(store: CustomPresetStore) -> None:
         )
         _spacer(44)
 
-        with st.container(key="home_input"):
-            if "concept_input" not in st.session_state:
-                st.session_state.concept_input = st.session_state.concept_text
-            st.text_input(
-                "测试目标",
-                placeholder="输入测试目标（例如：环保）",
-                key="concept_input",
-                on_change=_sync_concept_text,
-                label_visibility="collapsed",
-            )
-        _spacer(44)
+        with st.form(key="home_start_form", border=False):
+            with st.container(key="home_input"):
+                if "concept_input" not in st.session_state:
+                    st.session_state.concept_input = (
+                        st.session_state.concept_text
+                    )
+                st.text_input(
+                    "测试目标",
+                    placeholder="输入测试目标（例如：环保）",
+                    key="concept_input",
+                    label_visibility="collapsed",
+                )
+            _spacer(44)
 
-        with st.container(key="home_start_container"):
-            start_clicked = st.button(
-                "开始",
-                key="home_start",
-                type="primary",
-                disabled=not st.session_state.concept_text.strip(),
-            )
-        if start_clicked:
-            st.session_state.pending_custom_config = resolved_custom_config()
-            st.session_state.page = "instruction"
-            st.rerun()
+            with st.container(key="home_start_container"):
+                start_clicked = st.form_submit_button(
+                    "开始",
+                    key="home_start",
+                    type="primary",
+                    shortcut="Enter",
+                )
+            if start_clicked and st.session_state.concept_input.strip():
+                st.session_state.concept_text = (
+                    st.session_state.concept_input
+                )
+                st.session_state.pending_custom_config = (
+                    resolved_custom_config()
+                )
+                st.session_state.page = "instruction"
+                st.rerun()
 
         _spacer(44)
         with st.container(key="home_custom_container"):

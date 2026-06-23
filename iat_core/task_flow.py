@@ -134,15 +134,15 @@ class TaskProgress:
 
 def block_instruction_text(block: IATBlock, concept: str) -> str:
     if block.id == 1:
-        return f"其他按 S，{concept} 按 J"
+        return f"中性词汇按 S，{concept} 按 J"
     if block.id == 2:
-        return "正面按 S，负面按 J"
+        return "正面词汇按 S，负面词汇按 J"
     if block.id in {3, 4}:
-        return f"其他和正面按 S，{concept} 和负面按 J"
+        return f"中性词汇和正面词汇按 S，{concept} 和负面词汇按 J"
     if block.id == 5:
-        return f"{concept} 按 S，其他按 J"
+        return f"{concept} 按 S，中性词汇按 J"
     if block.id in {6, 7}:
-        return f"{concept} 和正面按 S，其他和负面按 J"
+        return f"{concept} 和正面词汇 按 S，中性词汇 和 负面词汇 按 J"
     return (
         f"当出现 {block.left_label} 时按 “S”，"
         f"当出现 {block.right_label} 时按 “J”。"
