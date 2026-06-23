@@ -1,0 +1,1506 @@
+//
+//  ContentView.swift
+//  IAT测试
+//
+//  Created by jason on 2/23/26.
+//
+
+import SwiftUI
+#if os(iOS)
+import UIKit
+#elseif os(macOS)
+import AppKit
+#endif
+
+struct ContentView: View {
+    var body: some View {
+        NavigationStack {
+            HomeView()
+        }
+        .font(.system(size: 18))
+    }
+}
+
+private struct CustomPreset: Identifiable, Codable, Hashable {
+    let id: UUID
+    var positiveText: String
+    var negativeText: String
+    var yyText: String
+    var zzText: String
+    var updatedAt: Date
+
+    var displayName: String {
+        let left = yyText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let right = zzText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if left.isEmpty && right.isEmpty {
+            return "未命名"
+        }
+        return "\(left.isEmpty ? "yy" : left)/\(right.isEmpty ? "zz" : right)"
+    }
+}
+
+private enum CustomPresetStore {
+    private static let storageKey = "IAT_CustomPresets"
+
+    static func load() -> [CustomPreset] {
+        guard let data = UserDefaults.standard.data(forKey: storageKey),
+              let presets = try? JSONDecoder().decode([CustomPreset].self, from: data) else {
+            return []
+        }
+        return presets
+    }
+
+    static func save(_ presets: [CustomPreset]) {
+        guard let data = try? JSONEncoder().encode(presets) else { return }
+        UserDefaults.standard.set(data, forKey: storageKey)
+    }
+}
+
+private struct CustomWordConfig: Hashable {
+    let positives: [String]
+    let negatives: [String]
+    let yyText: String
+    let zzText: String
+}
+
+private struct HomeView: View {
+    @State private var conceptText: String = ""
+    @State private var showCustomSheet: Bool = false
+    @State private var customPositiveText: String = ""
+    @State private var customNegativeText: String = ""
+    @State private var customYYText: String = ""
+    @State private var customZZText: String = ""
+    @State private var presets: [CustomPreset] = []
+
+    var body: some View {
+        VStack(spacing: 44) {
+            Text("你要测试态度的概念")
+                .font(.title)
+                .fontWeight(.semibold)
+
+            TextField("输入测试目标（例如：环保）", text: $conceptText)
+                .textFieldStyle(.roundedBorder)
+                .frame(maxWidth: 380)
+
+            NavigationLink {
+                InstructionView(
+                    concept: conceptText,
+                    isPreciseMode: true,
+                    customConfig: resolvedCustomConfig
+                )
+            } label: {
+                Text("开始")
+                    .frame(width: 160, height: 48)
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(conceptText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+            Button("自定义") {
+                showCustomSheet = true
+            }
+            .frame(width: 160, height: 44)
+            .buttonStyle(.bordered)
+
+            VStack(spacing: 6) {
+                Text("测试会记录反应时与正确率")
+                Text("请使用键盘按键作答")
+                Text("建议在安静环境完成")
+            }
+            .font(.system(size: 18))
+            .foregroundStyle(.secondary)
+
+        }
+        .padding(32)
+        .navigationTitle("IAT 测试")
+        .onAppear {
+            presets = CustomPresetStore.load()
+        }
+        .sheet(isPresented: $showCustomSheet) {
+            CustomSheetView(
+                isPresented: $showCustomSheet,
+                positiveText: $customPositiveText,
+                negativeText: $customNegativeText,
+                yyText: $customYYText,
+                zzText: $customZZText,
+                presets: $presets
+            )
+        }
+    }
+
+    private var resolvedCustomConfig: CustomWordConfig? {
+        let positives = parseWords(from: customPositiveText)
+        let negatives = parseWords(from: customNegativeText)
+        if positives.isEmpty && negatives.isEmpty && customYYText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && customZZText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return nil
+        }
+        return CustomWordConfig(
+            positives: positives,
+            negatives: negatives,
+            yyText: customYYText.trimmingCharacters(in: .whitespacesAndNewlines),
+            zzText: customZZText.trimmingCharacters(in: .whitespacesAndNewlines)
+        )
+    }
+
+    private func parseWords(from text: String) -> [String] {
+        let separators = CharacterSet(charactersIn: ",，;\n /／")
+        return text
+            .components(separatedBy: separators)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+    }
+}
+
+private struct InstructionView: View {
+    let concept: String
+    let isPreciseMode: Bool
+    let customConfig: CustomWordConfig?
+
+    var body: some View {
+        VStack(spacing: 24) {
+            Text("这是一个反应时分类任务。\n屏幕上方左右会显示两个分类标签。\n当刺激属于左侧标签时按 ‘S’，属于右侧标签时按 ‘J’।\n请尽量又快又准。按错会提示错误，需要改正后才能进入下一题。")
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: 560)
+
+            NavigationLink {
+                TaskView(session: IATSession(
+                    concept: concept,
+                    isPreciseMode: isPreciseMode,
+                    customConfig: customConfig
+                ))
+            } label: {
+                Text("确定")
+                    .frame(width: 160, height: 48)
+            }
+            .buttonStyle(.borderedProminent)
+            .keyboardShortcut(.defaultAction)
+        }
+        .padding(32)
+        .navigationTitle("总说明")
+        .overlay {
+            VerticalGuidesView()
+        }
+    }
+}
+
+private struct CustomSheetView: View {
+    @Binding var isPresented: Bool
+    @Binding var positiveText: String
+    @Binding var negativeText: String
+    @Binding var yyText: String
+    @Binding var zzText: String
+    @Binding var presets: [CustomPreset]
+
+    @State private var showHistory: Bool = false
+    @State private var selectedPresetId: UUID? = nil
+
+    var body: some View {
+        VStack(spacing: 16) {
+            HStack {
+                Button {
+                    isPresented = false
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 16, weight: .semibold))
+                }
+                Spacer()
+            }
+
+            Text("自定义")
+                .font(.title2)
+                .fontWeight(.semibold)
+
+            VStack(spacing: 12) {
+                TextField("正面（输入正面匹配词）", text: $positiveText, axis: .vertical)
+                    .textFieldStyle(.roundedBorder)
+
+                TextField("负面（输入负面匹配词）", text: $negativeText, axis: .vertical)
+                    .textFieldStyle(.roundedBorder)
+
+                HStack(spacing: 12) {
+                    TextField("yy（正面更快）", text: $yyText)
+                        .textFieldStyle(.roundedBorder)
+                        .disabled(selectedPresetId != nil)
+                    TextField("zz（负面更快）", text: $zzText)
+                        .textFieldStyle(.roundedBorder)
+                        .disabled(selectedPresetId != nil)
+                }
+            }
+
+            if showHistory {
+                List {
+                    ForEach(presets) { preset in
+                        HStack {
+                            Button(preset.displayName) {
+                                positiveText = preset.positiveText
+                                negativeText = preset.negativeText
+                                yyText = preset.yyText
+                                zzText = preset.zzText
+                                selectedPresetId = preset.id
+                            }
+                            Spacer()
+                            Button {
+                                deletePreset(preset)
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundStyle(.secondary)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+                .frame(maxHeight: 220)
+            }
+
+            HStack(spacing: 16) {
+                Button("历史") {
+                    showHistory.toggle()
+                }
+                .buttonStyle(.bordered)
+
+                Button("确定") {
+                    savePreset(closeAfterSave: true)
+                }
+                .buttonStyle(.borderedProminent)
+                .keyboardShortcut(.defaultAction)
+
+                Button("保存") {
+                    savePreset(closeAfterSave: true)
+                }
+                .buttonStyle(.bordered)
+            }
+        }
+        .padding(24)
+        .frame(minWidth: 520)
+        .onAppear {
+            presets = CustomPresetStore.load()
+        }
+    }
+
+    private func savePreset(closeAfterSave: Bool) {
+        let trimmedYY = yyText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedZZ = zzText.trimmingCharacters(in: .whitespacesAndNewlines)
+        var updated = presets
+        if let selectedId = selectedPresetId,
+           let index = updated.firstIndex(where: { $0.id == selectedId }) {
+            updated[index].positiveText = positiveText
+            updated[index].negativeText = negativeText
+            updated[index].updatedAt = Date()
+        } else {
+            let preset = CustomPreset(
+                id: UUID(),
+                positiveText: positiveText,
+                negativeText: negativeText,
+                yyText: trimmedYY,
+                zzText: trimmedZZ,
+                updatedAt: Date()
+            )
+            updated.insert(preset, at: 0)
+            selectedPresetId = preset.id
+        }
+        presets = updated
+        CustomPresetStore.save(updated)
+        if closeAfterSave {
+            isPresented = false
+        }
+    }
+
+    private func deletePreset(_ preset: CustomPreset) {
+        presets.removeAll { $0.id == preset.id }
+        if selectedPresetId == preset.id {
+            selectedPresetId = nil
+        }
+        CustomPresetStore.save(presets)
+    }
+}
+
+private struct TaskView: View {
+    @State var session: IATSession
+    @State private var blockIndex: Int = 0
+    @State private var trialIndex: Int = 0
+    @State private var showError: Bool = false
+    @State private var trialStartTime: UInt64 = 0
+    @State private var firstKey: String? = nil
+    @State private var showReport: Bool = false
+    @State private var showBlockIntro: Bool = false
+    @State private var highlightCorrect: Bool = false
+    @State private var isTransitioning: Bool = false
+    @State private var elapsedMs: Double = 0
+    @State private var timerTask: Task<Void, Never>? = nil
+
+    var body: some View {
+        let block = session.blocks[blockIndex]
+        let safeTrialIndex = min(trialIndex, max(block.trials.count - 1, 0))
+
+        VStack(spacing: 16) {
+            HStack(alignment: .top) {
+                Text(block.leftLabel)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                VStack(spacing: 4) {
+                    Text(String(format: "%.0f ms", elapsedMs))
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(.red)
+                    Text("本轮剩余关键词：\(block.trials.count - trialIndex)")
+                        .font(.system(size: 16))
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+
+                Text(block.rightLabel)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+            .font(.system(size: 20, weight: .semibold))
+            .padding(.horizontal, 24)
+
+            Spacer()
+
+            if block.trials.isEmpty {
+                Text("准备中…")
+                    .font(.system(size: 24, weight: .semibold))
+            } else {
+                Text(block.trials[safeTrialIndex].stimulus)
+                .font(.system(size: 56, weight: .bold))
+                .foregroundStyle(highlightCorrect ? .green : .primary)
+                .padding(.vertical, 16)
+            }
+
+            if showError {
+                Text("错误，请改正")
+                    .foregroundStyle(.red)
+            }
+
+            Spacer()
+
+        }
+        .padding(24)
+        .overlay(alignment: .center) {
+            HStack {
+                Button("S") {
+                    handleKey("S")
+                }
+                .keyboardShortcut("s", modifiers: [])
+
+                Spacer()
+
+                Button("J") {
+                    handleKey("J")
+                }
+                .keyboardShortcut("j", modifiers: [])
+            }
+            .buttonStyle(.bordered)
+            .padding(.horizontal, 24)
+        }
+        .overlay {
+            VerticalGuidesView()
+        }
+        .navigationTitle(block.title)
+        .navigationBarBackButtonHidden(true)
+        .onAppear {
+            prepareBlock()
+        }
+        .onChange(of: trialIndex) { _, _ in
+            if !showBlockIntro {
+                startTrial()
+            }
+        }
+        .onChange(of: blockIndex) { _, _ in
+            trialIndex = 0
+            prepareBlock()
+        }
+        .onDisappear {
+            timerTask?.cancel()
+        }
+        .navigationDestination(isPresented: $showReport) {
+            if let report = session.report {
+                ReportView(report: report, concept: session.concept, isPreciseMode: session.isPreciseMode)
+            }
+        }
+        .overlay(alignment: .bottomTrailing) {
+            Button("跳过（正式版删除）") {
+                skipBlock()
+            }
+            .buttonStyle(.bordered)
+            .padding(24)
+        }
+        .overlay {
+            if showBlockIntro {
+                BlockIntroOverlay(
+                    title: block.title,
+                    instruction: blockInstructionText(block: block, concept: session.concept),
+                    count: block.trials.count
+                ) {
+                    showBlockIntro = false
+                    startTrial()
+                }
+            }
+        }
+    }
+
+    private func prepareBlock() {
+        showBlockIntro = true
+        showError = false
+        firstKey = nil
+        highlightCorrect = false
+        isTransitioning = false
+        elapsedMs = 0
+        trialStartTime = 0
+        timerTask?.cancel()
+    }
+
+    private func startTrial() {
+        showError = false
+        firstKey = nil
+        highlightCorrect = false
+        isTransitioning = false
+        elapsedMs = 0
+        trialStartTime = DispatchTime.now().uptimeNanoseconds
+        startTimer()
+    }
+
+    private func handleKey(_ key: String) {
+        if showBlockIntro || isTransitioning {
+            return
+        }
+        let block = session.blocks[blockIndex]
+        let safeTrialIndex = min(trialIndex, max(block.trials.count - 1, 0))
+        let trial = block.trials[safeTrialIndex]
+        let now = DispatchTime.now().uptimeNanoseconds
+
+        if firstKey == nil {
+            firstKey = key
+            let rtMs = Double(now - trialStartTime) / 1_000_000.0
+            let isCorrect = key == trial.correctKey
+            session.recordResponse(
+                blockIndex: blockIndex,
+                trialIndex: trialIndex,
+                firstKey: key,
+                isCorrect: isCorrect,
+                rtMs: rtMs
+            )
+            showError = !isCorrect
+            if isCorrect {
+                highlightCorrect = true
+                isTransitioning = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    highlightCorrect = false
+                    isTransitioning = false
+                    advance()
+                }
+            }
+            return
+        }
+
+        if showError && key == trial.correctKey {
+            showError = false
+            highlightCorrect = true
+            isTransitioning = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                highlightCorrect = false
+                isTransitioning = false
+                advance()
+            }
+        }
+    }
+
+    private func skipBlock() {
+        let block = session.blocks[blockIndex]
+        for index in trialIndex..<block.trials.count {
+            let trial = block.trials[index]
+            session.recordResponse(
+                blockIndex: blockIndex,
+                trialIndex: index,
+                firstKey: trial.correctKey,
+                isCorrect: true,
+                rtMs: 800
+            )
+        }
+        showError = false
+        highlightCorrect = false
+        isTransitioning = false
+        timerTask?.cancel()
+        if blockIndex + 1 < session.blocks.count {
+            blockIndex += 1
+        } else {
+            session.finalize()
+            showReport = true
+        }
+    }
+
+    private func advance() {
+        let block = session.blocks[blockIndex]
+        if trialIndex + 1 < block.trials.count {
+            trialIndex += 1
+        } else if blockIndex + 1 < session.blocks.count {
+            blockIndex += 1
+        } else {
+            session.finalize()
+            showReport = true
+        }
+    }
+
+    private func blockInstructionText(block: IATBlock, concept: String) -> String {
+        switch block.id {
+        case 1:
+            return "其他按 S，\(concept) 按 J"
+        case 2:
+            return "正面按 S，负面按 J"
+        case 3, 4:
+            return "其他和正面按 S，\(concept) 和负面按 J"
+        case 5:
+            return "\(concept) 按 S，其他按 J"
+        case 6, 7:
+            return "\(concept) 和正面按 S，其他和负面按 J"
+        default:
+            return "当出现 \(block.leftLabel) 时按 “S”，当出现 \(block.rightLabel) 时按 “J”。"
+        }
+    }
+
+    private func startTimer() {
+        timerTask?.cancel()
+        let startTime = trialStartTime
+        timerTask = Task {
+            while !Task.isCancelled {
+                let now = DispatchTime.now().uptimeNanoseconds
+                let ms = Double(now - startTime) / 1_000_000.0
+                await MainActor.run {
+                    elapsedMs = ms
+                }
+                try? await Task.sleep(nanoseconds: 16_000_000)
+            }
+        }
+    }
+}
+
+private struct BlockIntroOverlay: View {
+    let title: String
+    let instruction: String
+    let count: Int
+    let onConfirm: () -> Void
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.4)
+                .ignoresSafeArea()
+
+            VStack(spacing: 16) {
+                Text(title)
+                    .font(.title2)
+                    .fontWeight(.semibold)
+
+                Text(instruction)
+                    .font(.system(size: 22))
+                    .multilineTextAlignment(.center)
+
+                Text("本轮题数：\(count)")
+                    .font(.system(size: 20))
+                    .foregroundStyle(.secondary)
+
+                Button("确定") {
+                    onConfirm()
+                }
+                .frame(width: 160, height: 48)
+                .buttonStyle(.borderedProminent)
+                .keyboardShortcut(.defaultAction)
+            }
+            .padding(24)
+            .frame(maxWidth: 600)
+            .background(.ultraThickMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+    }
+}
+
+private struct VerticalGuidesView: View {
+    var body: some View {
+        GeometryReader { proxy in
+            let width = proxy.size.width
+            let height = proxy.size.height
+            let leftX = width * 0.35
+            let rightX = width * 0.65
+            Canvas { context, _ in
+                var path = Path()
+                path.move(to: CGPoint(x: leftX, y: 0))
+                path.addLine(to: CGPoint(x: leftX, y: height))
+                path.move(to: CGPoint(x: rightX, y: 0))
+                path.addLine(to: CGPoint(x: rightX, y: height))
+                context.stroke(
+                    path,
+                    with: .color(.secondary.opacity(0.6)),
+                    style: StrokeStyle(lineWidth: 1, dash: [6, 6])
+                )
+            }
+        }
+        .allowsHitTesting(false)
+    }
+}
+
+private struct ReportView: View {
+    let report: IATReport
+    let concept: String
+    let isPreciseMode: Bool
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("结果解释")
+                        .font(.headline)
+                    Text(report.interpretationText)
+                        .font(.title3)
+                        .fontWeight(.bold)
+                        .foregroundStyle(.green)
+                    Text("兼容正式首此眼动错误概率：\(report.compatibleFirstErrorRateString)")
+                        .font(.system(size: 18))
+                        .foregroundStyle(.secondary)
+                    Text("不兼容正式首此眼动错误概率：\(report.incompatibleFirstErrorRateString)")
+                        .font(.system(size: 18))
+                        .foregroundStyle(.secondary)
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("统计数据")
+                        .font(.headline)
+                    StatRow(title: "兼容表情变化度", value: "待定")
+                    StatRow(title: "不兼容表情变化度", value: "待定")
+                    StatRow(title: "兼容正确率", value: report.compatibleAccuracyString)
+                    StatRow(title: "不兼容正确率", value: report.incompatibleAccuracyString)
+                    StatRow(title: "当 \(concept) 与正面词汇配对时你的反应速度/错误率", value: report.compatibleSummaryString)
+                    StatRow(title: "当 \(concept) 与负面词汇配对时你的反应速度/错误率", value: report.incompatibleSummaryString)
+                    StatRow(title: "D 值", value: dScoreDisplayText)
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("散点图")
+                        .font(.headline)
+                    ScatterPlotView(points: report.scatterPoints)
+                        .frame(height: 240)
+                }
+
+                ExportView(csv: report.csvText, json: report.jsonText)
+            }
+            .padding(24)
+        }
+        .navigationTitle("报告")
+    }
+
+    private var dScoreDisplayText: String {
+        if isPreciseMode {
+            let absD = abs(report.dScore)
+            let label: String
+            if absD < 0.15 {
+                label = "无明显偏好"
+            } else if absD < 0.35 {
+                label = "轻微偏好"
+            } else if absD < 0.65 {
+                label = "中等偏好"
+            } else {
+                label = "强偏好"
+            }
+            return String(format: "|D|：%.2f (%@)", absD, label)
+        }
+        return report.dScoreString
+    }
+}
+
+private struct StatRow: View {
+    let title: String
+    let value: String
+
+    var body: some View {
+        HStack {
+            Text(title)
+            Spacer()
+            Text(value)
+                .fontWeight(.semibold)
+        }
+    }
+}
+
+private struct ScatterPlotView: View {
+    let points: [ScatterPoint]
+
+    var body: some View {
+        GeometryReader { proxy in
+            let maxX = max(points.map { $0.x }.max() ?? 1, 1)
+            let minX = min(points.map { $0.x }.min() ?? 0, 0)
+            let width = proxy.size.width
+            let height = proxy.size.height
+            Canvas { context, _ in
+                let axisPath = Path { path in
+                    path.move(to: CGPoint(x: 32, y: height - 24))
+                    path.addLine(to: CGPoint(x: width - 8, y: height - 24))
+                    path.move(to: CGPoint(x: 32, y: 8))
+                    path.addLine(to: CGPoint(x: 32, y: height - 24))
+                }
+                context.stroke(axisPath, with: .color(.secondary), lineWidth: 1)
+
+                for point in points {
+                    let xRatio = (point.x - minX) / (maxX - minX == 0 ? 1 : maxX - minX)
+                    let x = 32 + xRatio * (width - 40)
+                    let yBase: CGFloat = point.condition == .compatible ? height * 0.35 : height * 0.7
+                    let jitter = CGFloat(point.jitter) * 12
+                    let center = CGPoint(x: x, y: yBase + jitter)
+                    let dotRect = CGRect(x: center.x - 3, y: center.y - 3, width: 6, height: 6)
+                    context.fill(Path(ellipseIn: dotRect), with: .color(point.condition == .compatible ? .green : .red))
+                }
+            }
+        }
+    }
+}
+
+private struct ExportView: View {
+    let csv: String
+    let json: String
+    @State private var showCopied: Bool = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("导出")
+                .font(.headline)
+            HStack(spacing: 16) {
+                Button("复制 CSV") {
+                    copy(csv)
+                }
+                Button("复制 JSON") {
+                    copy(json)
+                }
+            }
+            if showCopied {
+                Text("已复制到剪贴板")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func copy(_ text: String) {
+        #if os(iOS)
+        UIPasteboard.general.string = text
+        #elseif os(macOS)
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
+        #endif
+        showCopied = true
+    }
+}
+
+private struct IATSession: Hashable {
+    let subjectId: String
+    let concept: String
+    let seed: UInt64
+    let orderCondition: Int
+    let positionCondition: Int
+    let isPreciseMode: Bool
+    let linkPositive: String
+    let linkNegative: String
+
+    var blocks: [IATBlock]
+    var responses: [TrialResponse]
+    var report: IATReport? = nil
+
+    init(concept: String, isPreciseMode: Bool, customConfig: CustomWordConfig?) {
+        self.subjectId = UUID().uuidString
+        self.concept = concept
+        self.seed = UInt64(Date().timeIntervalSince1970 * 1000)
+        var rng = SeededRandomNumberGenerator(seed: seed)
+        self.isPreciseMode = isPreciseMode
+        self.orderCondition = Bool.random(using: &rng) ? 1 : 2
+        self.positionCondition = Bool.random(using: &rng) ? 1 : 2
+        self.linkPositive = customConfig?.yyText.isEmpty == false ? customConfig?.yyText ?? "喜欢" : "喜欢"
+        self.linkNegative = customConfig?.zzText.isEmpty == false ? customConfig?.zzText ?? "不喜欢" : "不喜欢"
+        self.blocks = []
+        self.responses = []
+
+        let stimuli = StimulusBank(concept: concept, customConfig: customConfig)
+        self.blocks = IATBlockFactory.makeBlocks(
+            stimuli: stimuli,
+            orderCondition: orderCondition,
+            positionCondition: positionCondition,
+            rng: &rng
+        )
+        for blockIndex in blocks.indices {
+            for trialIndex in blocks[blockIndex].trials.indices {
+                responses.append(TrialResponse(blockIndex: blockIndex, trialIndex: trialIndex))
+            }
+        }
+    }
+
+    mutating func recordResponse(blockIndex: Int, trialIndex: Int, firstKey: String, isCorrect: Bool, rtMs: Double) {
+        if let index = responses.firstIndex(where: { $0.blockIndex == blockIndex && $0.trialIndex == trialIndex }) {
+            responses[index].firstKey = firstKey
+            responses[index].isCorrect = isCorrect
+            responses[index].rtMs = rtMs
+        }
+    }
+
+    mutating func finalize() {
+        let report = IATReport.generate(
+            subjectId: subjectId,
+            concept: concept,
+            linkPositive: linkPositive,
+            linkNegative: linkNegative,
+            seed: seed,
+            orderCondition: orderCondition,
+            positionCondition: positionCondition,
+            blocks: blocks,
+            responses: responses
+        )
+        self.report = report
+    }
+}
+
+private struct IATBlock: Hashable {
+    let id: Int
+    let title: String
+    let leftLabel: String
+    let rightLabel: String
+    let type: BlockType
+    let trials: [IATTrial]
+}
+
+private enum BlockType: String, Hashable {
+    case targetPractice
+    case attributePractice
+    case compatiblePractice
+    case compatibleFormal
+    case targetSwapPractice
+    case incompatiblePractice
+    case incompatibleFormal
+}
+
+private struct IATTrial: Hashable {
+    let stimulus: String
+    let category: StimulusCategory
+    let correctKey: String
+}
+
+private enum StimulusCategory: String, Hashable {
+    case target
+    case neutral
+    case positive
+    case negative
+}
+
+private struct TrialResponse: Hashable {
+    let blockIndex: Int
+    let trialIndex: Int
+    var firstKey: String? = nil
+    var isCorrect: Bool? = nil
+    var rtMs: Double? = nil
+}
+
+private struct StimulusBank: Hashable {
+    let concept: String
+    let positives: [String]
+    let negatives: [String]
+    let neutrals: [String] = [
+        "桌子", "椅子", "窗户", "地板", "天花板", "书本", "纸张", "铅笔", "水杯", "衣服", "鞋子", "背包", "钥匙", "手机", "电脑", "耳机", "时钟", "日历", "天气", "温度", "交通", "街道", "公园", "商店", "城市", "乡村", "颜色", "数字", "形状", "声音", "光线"
+    ]
+
+    private static let defaultPositives: [String] = [
+        "开心", "快乐", "幸福", "喜悦", "愉快", "兴奋", "激动", "满足", "美好", "甜蜜", "喜爱", "幸福", "美好", "幸运", "爱", "好", "荣耀", "圆满", "舒适", "舒服", "喜欢"
+    ]
+
+    private static let defaultNegatives: [String] = [
+        "死亡", "犯罪", "疾病", "疼痛", "痛苦", "恶心", "蟑螂", "憎恨", "恐惧", "害怕", "羞辱", "惊恐", "阴暗", "危险", "威胁", "灾难", "折磨", "痛恨", "烦躁", "悲痛", "绝望", "恐怖"
+    ]
+
+    init(concept: String, customConfig: CustomWordConfig?) {
+        self.concept = concept
+        if let customConfig, !customConfig.positives.isEmpty {
+            self.positives = customConfig.positives
+        } else {
+            self.positives = Self.defaultPositives
+        }
+        if let customConfig, !customConfig.negatives.isEmpty {
+            self.negatives = customConfig.negatives
+        } else {
+            self.negatives = Self.defaultNegatives
+        }
+    }
+}
+
+private enum IATBlockFactory {
+    static func makeBlocks(
+        stimuli: StimulusBank,
+        orderCondition: Int,
+        positionCondition: Int,
+        rng: inout SeededRandomNumberGenerator
+    ) -> [IATBlock] {
+        let targetLeftFirst = positionCondition == 1
+
+        let block1 = makeTargetPractice(stimuli: stimuli, targetLeft: targetLeftFirst, rng: &rng)
+        let block2 = makeAttributePractice(stimuli: stimuli, rng: &rng)
+
+        let compatibleBlocks: [IATBlock] = [
+            makeCombinedPractice(stimuli: stimuli, targetLeft: targetLeftFirst, compatible: true, rng: &rng),
+            makeCombinedFormal(stimuli: stimuli, targetLeft: targetLeftFirst, compatible: true, rng: &rng)
+        ]
+
+        let targetSwap = makeTargetSwapPractice(stimuli: stimuli, targetLeft: !targetLeftFirst, rng: &rng)
+
+        let incompatibleBlocks: [IATBlock] = [
+            makeCombinedPractice(stimuli: stimuli, targetLeft: !targetLeftFirst, compatible: false, rng: &rng),
+            makeCombinedFormal(stimuli: stimuli, targetLeft: !targetLeftFirst, compatible: false, rng: &rng)
+        ]
+
+        return [block1, block2] + compatibleBlocks + [targetSwap] + incompatibleBlocks
+    }
+
+    private static func makeTargetPractice(
+        stimuli: StimulusBank,
+        targetLeft: Bool,
+        rng: inout SeededRandomNumberGenerator
+    ) -> IATBlock {
+        let leftLabel = "其他"
+        let rightLabel = stimuli.concept
+        let trials = makeTrials(
+            stimuli: stimuli,
+            counts: [(.target, 4), (.neutral, 4)],
+            leftCategories: [.neutral],
+            rng: &rng,
+            avoidRepeat: false
+        )
+        return IATBlock(id: 1, title: "Block 1：目标分类练习", leftLabel: leftLabel, rightLabel: rightLabel, type: .targetPractice, trials: trials)
+    }
+
+    private static func makeAttributePractice(
+        stimuli: StimulusBank,
+        rng: inout SeededRandomNumberGenerator
+    ) -> IATBlock {
+        let trials = makeTrials(
+            stimuli: stimuli,
+            counts: [(.positive, 4), (.negative, 4)],
+            leftCategories: [.positive],
+            rng: &rng,
+            avoidRepeat: false
+        )
+        return IATBlock(id: 2, title: "Block 2：属性分类练习", leftLabel: "正面", rightLabel: "负面", type: .attributePractice, trials: trials)
+    }
+
+    private static func makeCombinedPractice(
+        stimuli: StimulusBank,
+        targetLeft: Bool,
+        compatible: Bool,
+        rng: inout SeededRandomNumberGenerator
+    ) -> IATBlock {
+        let isCompatible = compatible
+        let leftLabel: String
+        let rightLabel: String
+        let leftCats: Set<StimulusCategory>
+        if isCompatible {
+            leftLabel = "其他 + 正面"
+            rightLabel = "\(stimuli.concept) + 负面"
+            leftCats = [.neutral, .positive]
+        } else {
+            leftLabel = "\(stimuli.concept) + 正面"
+            rightLabel = "其他 + 负面"
+            leftCats = [.target, .positive]
+        }
+        let counts: [(StimulusCategory, Int)] = [(.target, 3), (.neutral, 3), (.positive, 2), (.negative, 2)]
+        let trials = makeTrials(
+            stimuli: stimuli,
+            counts: counts,
+            leftCategories: leftCats,
+            rng: &rng,
+            avoidRepeat: true
+        )
+        return IATBlock(id: isCompatible ? 3 : 6, title: isCompatible ? "Block 3：兼容联合练习" : "Block 6：不兼容联合练习", leftLabel: leftLabel, rightLabel: rightLabel, type: isCompatible ? .compatiblePractice : .incompatiblePractice, trials: trials)
+    }
+
+    private static func makeCombinedFormal(
+        stimuli: StimulusBank,
+        targetLeft: Bool,
+        compatible: Bool,
+        rng: inout SeededRandomNumberGenerator
+    ) -> IATBlock {
+        let isCompatible = compatible
+        let leftLabel: String
+        let rightLabel: String
+        let leftCats: Set<StimulusCategory>
+        if isCompatible {
+            leftLabel = "其他 + 正面"
+            rightLabel = "\(stimuli.concept) + 负面"
+            leftCats = [.neutral, .positive]
+        } else {
+            leftLabel = "\(stimuli.concept) + 正面"
+            rightLabel = "其他 + 负面"
+            leftCats = [.target, .positive]
+        }
+        let counts: [(StimulusCategory, Int)] = [(.target, 4), (.neutral, 4), (.positive, 4), (.negative, 3)]
+        let trials = makeTrials(
+            stimuli: stimuli,
+            counts: counts,
+            leftCategories: leftCats,
+            rng: &rng,
+            avoidRepeat: true
+        )
+        return IATBlock(id: isCompatible ? 4 : 7, title: isCompatible ? "Block 4：兼容联合正式" : "Block 7：不兼容联合正式", leftLabel: leftLabel, rightLabel: rightLabel, type: isCompatible ? .compatibleFormal : .incompatibleFormal, trials: trials)
+    }
+
+    private static func makeTargetSwapPractice(
+        stimuli: StimulusBank,
+        targetLeft: Bool,
+        rng: inout SeededRandomNumberGenerator
+    ) -> IATBlock {
+        let leftLabel = stimuli.concept
+        let rightLabel = "其他"
+        let trials = makeTrials(
+            stimuli: stimuli,
+            counts: [(.target, 5), (.neutral, 5)],
+            leftCategories: [.target],
+            rng: &rng,
+            avoidRepeat: false
+        )
+        return IATBlock(id: 5, title: "Block 5：目标换位练习", leftLabel: leftLabel, rightLabel: rightLabel, type: .targetSwapPractice, trials: trials)
+    }
+
+    private static func makeTrials(
+        stimuli: StimulusBank,
+        counts: [(StimulusCategory, Int)],
+        leftCategories: Set<StimulusCategory>,
+        rng: inout SeededRandomNumberGenerator,
+        avoidRepeat: Bool
+    ) -> [IATTrial] {
+        var trials: [IATTrial] = []
+        for (category, count) in counts {
+            for _ in 0..<count {
+                let stimulus = pickStimulus(stimuli: stimuli, category: category, rng: &rng)
+                let correctKey = leftCategories.contains(category) ? "S" : "J"
+                trials.append(IATTrial(stimulus: stimulus, category: category, correctKey: correctKey))
+            }
+        }
+        trials.shuffle(using: &rng)
+        if avoidRepeat {
+            return shuffleAvoidingConsecutiveSameStimulus(trials, rng: &rng)
+        }
+        return trials
+    }
+
+    private static func shuffleAvoidingConsecutiveSameStimulus(
+        _ trials: [IATTrial],
+        rng: inout SeededRandomNumberGenerator
+    ) -> [IATTrial] {
+        var result = trials
+        for _ in 0..<20 {
+            result.shuffle(using: &rng)
+            if !hasConsecutiveRepeat(result) {
+                return result
+            }
+            for index in 1..<result.count {
+                if result[index].stimulus == result[index - 1].stimulus {
+                    if let swapIndex = (index + 1..<result.count).first(where: { candidate in
+                        let current = result[index].stimulus
+                        let previous = result[index - 1].stimulus
+                        let next = candidate + 1 < result.count ? result[candidate + 1].stimulus : ""
+                        return result[candidate].stimulus != current && result[candidate].stimulus != previous && next != current
+                    }) {
+                        result.swapAt(index, swapIndex)
+                    }
+                }
+            }
+            if !hasConsecutiveRepeat(result) {
+                return result
+            }
+        }
+        return result
+    }
+
+    private static func hasConsecutiveRepeat(_ trials: [IATTrial]) -> Bool {
+        guard trials.count > 1 else { return false }
+        for index in 1..<trials.count where trials[index].stimulus == trials[index - 1].stimulus {
+            return true
+        }
+        return false
+    }
+
+    private static func pickStimulus(
+        stimuli: StimulusBank,
+        category: StimulusCategory,
+        rng: inout SeededRandomNumberGenerator
+    ) -> String {
+        switch category {
+        case .target:
+            return stimuli.concept
+        case .neutral:
+            return stimuli.neutrals.randomElement(using: &rng) ?? ""
+        case .positive:
+            return stimuli.positives.randomElement(using: &rng) ?? ""
+        case .negative:
+            return stimuli.negatives.randomElement(using: &rng) ?? ""
+        }
+    }
+}
+
+private struct IATReport: Hashable {
+    let interpretationText: String
+    let compatibleMeanMs: Double
+    let incompatibleMeanMs: Double
+    let compatibleAccuracy: Double
+    let incompatibleAccuracy: Double
+    let compatibleFirstErrorRate: Double
+    let incompatibleFirstErrorRate: Double
+    let dScore: Double
+    let scatterPoints: [ScatterPoint]
+    let csvText: String
+    let jsonText: String
+
+    var compatibleMeanMsString: String { String(format: "%.0f ms", compatibleMeanMs) }
+    var incompatibleMeanMsString: String { String(format: "%.0f ms", incompatibleMeanMs) }
+    var compatibleAccuracyString: String { String(format: "%.1f%%", compatibleAccuracy * 100) }
+    var incompatibleAccuracyString: String { String(format: "%.1f%%", incompatibleAccuracy * 100) }
+    var dScoreString: String { String(format: "%.2f", dScore) }
+    var compatibleSummaryString: String {
+        String(format: "%.0f ms / %.1f%%", compatibleMeanMs, (1 - compatibleAccuracy) * 100)
+    }
+    var incompatibleSummaryString: String {
+        String(format: "%.0f ms / %.1f%%", incompatibleMeanMs, (1 - incompatibleAccuracy) * 100)
+    }
+    var compatibleFirstErrorRateString: String { String(format: "%.1f%%", compatibleFirstErrorRate * 100) }
+    var incompatibleFirstErrorRateString: String { String(format: "%.1f%%", incompatibleFirstErrorRate * 100) }
+
+    static func generate(
+        subjectId: String,
+        concept: String,
+        linkPositive: String,
+        linkNegative: String,
+        seed: UInt64,
+        orderCondition: Int,
+        positionCondition: Int,
+        blocks: [IATBlock],
+        responses: [TrialResponse]
+    ) -> IATReport {
+        let formalBlocks = [BlockType.compatibleFormal, BlockType.incompatibleFormal]
+        var scoredTrials: [ScoredTrial] = []
+
+        for blockIndex in blocks.indices {
+            let block = blocks[blockIndex]
+            guard formalBlocks.contains(block.type) else { continue }
+            for trialIndex in block.trials.indices {
+                let trial = block.trials[trialIndex]
+                let response = responses.first { $0.blockIndex == blockIndex && $0.trialIndex == trialIndex }
+                if let response, let firstKey = response.firstKey, let rtMs = response.rtMs, let isCorrect = response.isCorrect {
+                    scoredTrials.append(ScoredTrial(
+                        blockType: block.type,
+                        stimulus: trial.stimulus,
+                        category: trial.category,
+                        correctKey: trial.correctKey,
+                        firstKey: firstKey,
+                        isCorrect: isCorrect,
+                        rtMs: rtMs
+                    ))
+                }
+            }
+        }
+
+        let cleaned = DataCleaner.clean(trials: scoredTrials)
+        let compatibleStats = cleaned.compatible
+        let incompatibleStats = cleaned.incompatible
+
+        let compatibleFirstErrorRate = Stats.errorRate(trials: scoredTrials, blockType: .compatibleFormal)
+        let incompatibleFirstErrorRate = Stats.errorRate(trials: scoredTrials, blockType: .incompatibleFormal)
+
+        let pooledSd = Stats.pooledStandardDeviation(
+            a: compatibleStats.cleanedRts,
+            b: incompatibleStats.cleanedRts
+        )
+        let dScore = pooledSd == 0 ? 0 : (incompatibleStats.mean - compatibleStats.mean) / pooledSd
+
+        let interpretationText: String
+        if abs(dScore) < 0.15 {
+            interpretationText = "你对 ‘\(concept)’ 的偏好不明显"
+        } else if dScore > 0 {
+            interpretationText = "你\(linkPositive)\(concept)"
+        } else {
+            interpretationText = "你\(linkNegative)\(concept)"
+        }
+
+        let scatterPoints = cleaned.allTrials.map {
+            ScatterPoint(x: $0.rtMs / 1000.0, condition: $0.blockType == .compatibleFormal ? .compatible : .incompatible)
+        }
+
+        let export = ExportBuilder.build(
+            subjectId: subjectId,
+            concept: concept,
+            seed: seed,
+            orderCondition: orderCondition,
+            positionCondition: positionCondition,
+            blocks: blocks,
+            trials: cleaned.allTrials
+        )
+
+        return IATReport(
+            interpretationText: interpretationText,
+            compatibleMeanMs: compatibleStats.mean,
+            incompatibleMeanMs: incompatibleStats.mean,
+            compatibleAccuracy: compatibleStats.accuracy,
+            incompatibleAccuracy: incompatibleStats.accuracy,
+            compatibleFirstErrorRate: compatibleFirstErrorRate,
+            incompatibleFirstErrorRate: incompatibleFirstErrorRate,
+            dScore: dScore,
+            scatterPoints: scatterPoints,
+            csvText: export.csv,
+            jsonText: export.json
+        )
+    }
+}
+
+private struct ScoredTrial: Hashable {
+    let blockType: BlockType
+    let stimulus: String
+    let category: StimulusCategory
+    let correctKey: String
+    let firstKey: String
+    let isCorrect: Bool
+    let rtMs: Double
+}
+
+private struct CleanedTrial: Hashable {
+    let blockType: BlockType
+    let stimulus: String
+    let category: StimulusCategory
+    let correctKey: String
+    let firstKey: String
+    let isCorrect: Bool
+    let rtMs: Double
+    let isExtreme: Bool
+    let isExcluded: Bool
+    let cleanedRtMs: Double?
+}
+
+private enum ConditionType {
+    case compatible
+    case incompatible
+}
+
+private struct ScatterPoint: Hashable {
+    let x: Double
+    let condition: ConditionType
+    let jitter: Double
+
+    init(x: Double, condition: ConditionType) {
+        self.x = x
+        self.condition = condition
+        self.jitter = Double.random(in: -0.5...0.5)
+    }
+}
+
+private enum DataCleaner {
+    static func clean(trials: [ScoredTrial]) -> CleanedSet {
+        let compatibleTrials = trials.filter { $0.blockType == .compatibleFormal }
+        let incompatibleTrials = trials.filter { $0.blockType == .incompatibleFormal }
+
+        let cleanedCompatible = cleanBlock(trials: compatibleTrials)
+        let cleanedIncompatible = cleanBlock(trials: incompatibleTrials)
+
+        let allTrials = cleanedCompatible.trials + cleanedIncompatible.trials
+
+        return CleanedSet(
+            compatible: cleanedCompatible.stats,
+            incompatible: cleanedIncompatible.stats,
+            allTrials: allTrials
+        )
+    }
+
+    private static func cleanBlock(trials: [ScoredTrial]) -> (trials: [CleanedTrial], stats: BlockStats) {
+        var cleaned: [CleanedTrial] = []
+        let correctTrials = trials.filter { $0.isCorrect && $0.rtMs >= 200 && $0.rtMs <= 2000 }
+        let meanCorrect = Stats.mean(correctTrials.map { $0.rtMs })
+
+        for trial in trials {
+            let isExtreme = trial.rtMs < 200 || trial.rtMs > 2000
+            let cleanedRt: Double?
+            if isExtreme {
+                cleanedRt = nil
+            } else if trial.isCorrect {
+                cleanedRt = trial.rtMs
+            } else {
+                cleanedRt = meanCorrect + 400
+            }
+            let cleanedTrial = CleanedTrial(
+                blockType: trial.blockType,
+                stimulus: trial.stimulus,
+                category: trial.category,
+                correctKey: trial.correctKey,
+                firstKey: trial.firstKey,
+                isCorrect: trial.isCorrect,
+                rtMs: trial.rtMs,
+                isExtreme: isExtreme,
+                isExcluded: isExtreme,
+                cleanedRtMs: cleanedRt
+            )
+            cleaned.append(cleanedTrial)
+        }
+
+        let stats = BlockStats(
+            cleanedRts: cleaned.compactMap { $0.cleanedRtMs },
+            accuracy: Stats.accuracy(trials: trials)
+        )
+
+        return (cleaned, stats)
+    }
+}
+
+private struct CleanedSet: Hashable {
+    let compatible: BlockStats
+    let incompatible: BlockStats
+    let allTrials: [CleanedTrial]
+}
+
+private struct BlockStats: Hashable {
+    let cleanedRts: [Double]
+    let accuracy: Double
+
+    var mean: Double { Stats.mean(cleanedRts) }
+}
+
+private enum Stats {
+    static func mean(_ values: [Double]) -> Double {
+        guard !values.isEmpty else { return 0 }
+        return values.reduce(0, +) / Double(values.count)
+    }
+
+    static func standardDeviation(_ values: [Double]) -> Double {
+        guard values.count > 1 else { return 0 }
+        let mean = mean(values)
+        let variance = values.reduce(0) { $0 + pow($1 - mean, 2) } / Double(values.count - 1)
+        return sqrt(variance)
+    }
+
+    static func pooledStandardDeviation(a: [Double], b: [Double]) -> Double {
+        let aCount = Double(a.count)
+        let bCount = Double(b.count)
+        guard aCount > 1, bCount > 1 else { return 0 }
+        let aVar = pow(standardDeviation(a), 2)
+        let bVar = pow(standardDeviation(b), 2)
+        let pooled = ((aCount - 1) * aVar + (bCount - 1) * bVar) / (aCount + bCount - 2)
+        return sqrt(pooled)
+    }
+
+    static func accuracy(trials: [ScoredTrial]) -> Double {
+        guard !trials.isEmpty else { return 0 }
+        let correct = trials.filter { $0.isCorrect }.count
+        return Double(correct) / Double(trials.count)
+    }
+
+    static func errorRate(trials: [ScoredTrial], blockType: BlockType) -> Double {
+        let filtered = trials.filter { $0.blockType == blockType }
+        guard !filtered.isEmpty else { return 0 }
+        let incorrect = filtered.filter { !$0.isCorrect }.count
+        return Double(incorrect) / Double(filtered.count)
+    }
+}
+
+private enum ExportBuilder {
+    static func build(
+        subjectId: String,
+        concept: String,
+        seed: UInt64,
+        orderCondition: Int,
+        positionCondition: Int,
+        blocks: [IATBlock],
+        trials: [CleanedTrial]
+    ) -> (csv: String, json: String) {
+        var csvLines: [String] = []
+        csvLines.append("subjectId,timestamp,seed,orderCondition,positionCondition,blockId,blockType,stimulus,category,correctKey,firstKey,isCorrect,rtMs,isExtreme,isExcluded")
+
+        let timestamp = ISO8601DateFormatter().string(from: Date())
+        let jsonTrials: [ExportTrial] = trials.enumerated().map { index, trial in
+            let blockId = blockIdForType(blocks: blocks, type: trial.blockType)
+            csvLines.append([
+                subjectId,
+                timestamp,
+                String(seed),
+                String(orderCondition),
+                String(positionCondition),
+                String(blockId),
+                trial.blockType.rawValue,
+                trial.stimulus,
+                categoryString(category: trial.category, concept: concept),
+                trial.correctKey,
+                trial.firstKey,
+                String(trial.isCorrect),
+                String(format: "%.0f", trial.rtMs),
+                String(trial.isExtreme),
+                String(trial.isExcluded)
+            ].joined(separator: ","))
+
+            return ExportTrial(
+                subjectId: subjectId,
+                timestamp: timestamp,
+                seed: seed,
+                orderCondition: orderCondition,
+                positionCondition: positionCondition,
+                blockId: blockId,
+                blockType: trial.blockType.rawValue,
+                stimulus: trial.stimulus,
+                category: categoryString(category: trial.category, concept: concept),
+                correctKey: trial.correctKey,
+                firstKey: trial.firstKey,
+                isCorrect: trial.isCorrect,
+                rtMs: Int(trial.rtMs),
+                isExtreme: trial.isExtreme,
+                isExcluded: trial.isExcluded
+            )
+        }
+
+        let csv = csvLines.joined(separator: "\n")
+        let jsonData = (try? JSONEncoder().encode(jsonTrials)) ?? Data()
+        let json = String(data: jsonData, encoding: .utf8) ?? "[]"
+        return (csv, json)
+    }
+
+    private static func blockIdForType(blocks: [IATBlock], type: BlockType) -> Int {
+        if let match = blocks.first(where: { $0.type == type }) {
+            return match.id
+        }
+        return 0
+    }
+
+    private static func categoryString(category: StimulusCategory, concept: String) -> String {
+        switch category {
+        case .target:
+            return concept
+        case .neutral:
+            return "其他"
+        case .positive:
+            return "正"
+        case .negative:
+            return "负"
+        }
+    }
+}
+
+private struct ExportTrial: Codable, Hashable {
+    let subjectId: String
+    let timestamp: String
+    let seed: UInt64
+    let orderCondition: Int
+    let positionCondition: Int
+    let blockId: Int
+    let blockType: String
+    let stimulus: String
+    let category: String
+    let correctKey: String
+    let firstKey: String
+    let isCorrect: Bool
+    let rtMs: Int
+    let isExtreme: Bool
+    let isExcluded: Bool
+}
+
+private struct SeededRandomNumberGenerator: RandomNumberGenerator {
+    private var state: UInt64
+
+    init(seed: UInt64) {
+        self.state = seed == 0 ? 0x1234567890abcdef : seed
+    }
+
+    mutating func next() -> UInt64 {
+        state = 2862933555777941757 &* state &+ 3037000493
+        return state
+    }
+}
+
+#Preview {
+    ContentView()
+}

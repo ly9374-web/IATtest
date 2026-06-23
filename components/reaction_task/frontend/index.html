@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text",
+          "Segoe UI", sans-serif;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: transparent;
+        overflow: hidden;
+      }
+      #surface {
+        box-sizing: border-box;
+        height: 100%;
+        min-height: 300px;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        outline: none;
+        padding: 24px;
+      }
+      .guide {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 0;
+        border-left: 1px dashed rgba(128, 128, 128, 0.6);
+        pointer-events: none;
+      }
+      #guide-left {
+        left: 35%;
+      }
+      #guide-right {
+        left: 65%;
+      }
+      #top {
+        position: absolute;
+        top: 24px;
+        left: 24px;
+        right: 24px;
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        align-items: start;
+        font-size: 20px;
+        line-height: 1.25;
+        font-weight: 600;
+      }
+      #left-label {
+        text-align: left;
+      }
+      #right-label {
+        text-align: right;
+      }
+      #status {
+        text-align: center;
+      }
+      #elapsed {
+        color: #ff3b30;
+        font-size: 18px;
+        font-weight: 600;
+      }
+      #remaining {
+        margin-top: 4px;
+        color: rgba(128, 128, 128, 0.9);
+        font-size: 16px;
+        font-weight: 400;
+      }
+      #center {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      #stimulus {
+        font-size: 56px;
+        line-height: 1.2;
+        font-weight: 700;
+        color: inherit;
+        padding: 16px 0;
+        transition: color 80ms linear;
+      }
+      #stimulus.correct {
+        color: #22a447;
+      }
+      #error {
+        min-height: 22px;
+        color: #ff3b30;
+        font-size: 18px;
+        visibility: hidden;
+      }
+      #error.visible {
+        visibility: visible;
+      }
+      .response-button {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        min-width: 44px;
+        min-height: 34px;
+        border: 1px solid rgba(128, 128, 128, 0.45);
+        border-radius: 7px;
+        background: rgba(128, 128, 128, 0.08);
+        color: inherit;
+        font: inherit;
+        font-size: 18px;
+        cursor: pointer;
+        z-index: 3;
+      }
+      #key-s {
+        left: 24px;
+      }
+      #key-j {
+        right: 24px;
+      }
+      .response-button:disabled {
+        opacity: 0.45;
+        cursor: default;
+      }
+      #skip-block {
+        position: absolute;
+        right: 24px;
+        bottom: 24px;
+        min-height: 38px;
+        padding: 0 14px;
+        border: 1px solid rgba(128, 128, 128, 0.45);
+        border-radius: 7px;
+        background: rgba(128, 128, 128, 0.08);
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
+        z-index: 4;
+      }
+      #block-intro {
+        position: absolute;
+        inset: 0;
+        z-index: 20;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: rgba(0, 0, 0, 0.4);
+      }
+      #block-intro.visible {
+        display: flex;
+      }
+      #block-card {
+        box-sizing: border-box;
+        width: min(100%, 600px);
+        padding: 24px;
+        border-radius: 16px;
+        background: rgba(246, 246, 246, 0.94);
+        color: #1c1c1e;
+        box-shadow: 0 12px 42px rgba(0, 0, 0, 0.24);
+        backdrop-filter: blur(24px) saturate(180%);
+        text-align: center;
+      }
+      #block-title {
+        font-size: 24px;
+        line-height: 29px;
+        font-weight: 600;
+      }
+      #block-instruction {
+        margin-top: 16px;
+        font-size: 22px;
+        line-height: 1.35;
+      }
+      #block-count {
+        margin-top: 16px;
+        color: rgba(60, 60, 67, 0.65);
+        font-size: 20px;
+      }
+      #block-confirm {
+        width: 160px;
+        height: 48px;
+        margin-top: 16px;
+        border: 0;
+        border-radius: 8px;
+        background: #0a84ff;
+        color: #fff;
+        font: inherit;
+        cursor: pointer;
+      }
+      @media (prefers-color-scheme: dark) {
+        #block-card {
+          background: rgba(44, 44, 46, 0.94);
+          color: #f2f2f7;
+        }
+        #block-count {
+          color: rgba(235, 235, 245, 0.6);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main id="surface" tabindex="0" aria-label="IAT 反应任务">
+      <div id="guide-left" class="guide"></div>
+      <div id="guide-right" class="guide"></div>
+      <div id="top">
+        <div id="left-label"></div>
+        <div id="status">
+          <div id="elapsed">0 ms</div>
+          <div id="remaining"></div>
+        </div>
+        <div id="right-label"></div>
+      </div>
+      <button id="key-s" class="response-button" type="button">S</button>
+      <div id="center">
+        <div id="stimulus"></div>
+        <div id="error" role="alert">错误，请改正</div>
+      </div>
+      <button id="key-j" class="response-button" type="button">J</button>
+      <button id="skip-block" type="button">跳过（正式版删除）</button>
+      <div id="block-intro">
+        <div id="block-card">
+          <div id="block-title"></div>
+          <div id="block-instruction"></div>
+          <div id="block-count"></div>
+          <button id="block-confirm" type="button">确定</button>
+        </div>
+      </div>
+    </main>
+    <script type="module">
+      import { ReactionState } from "./reaction_state.mjs";
+
+      const surface = document.getElementById("surface");
+      const stimulus = document.getElementById("stimulus");
+      const error = document.getElementById("error");
+      const leftLabel = document.getElementById("left-label");
+      const rightLabel = document.getElementById("right-label");
+      const elapsed = document.getElementById("elapsed");
+      const remaining = document.getElementById("remaining");
+      const keyS = document.getElementById("key-s");
+      const keyJ = document.getElementById("key-j");
+      const skipBlock = document.getElementById("skip-block");
+      const blockIntro = document.getElementById("block-intro");
+      const blockTitle = document.getElementById("block-title");
+      const blockInstruction = document.getElementById("block-instruction");
+      const blockCount = document.getElementById("block-count");
+      const blockConfirm = document.getElementById("block-confirm");
+      const state = new ReactionState();
+
+      function send(type, payload) {
+        window.parent.postMessage({ isStreamlitMessage: true, type, ...payload }, "*");
+      }
+
+      function render(snapshot = state.snapshot()) {
+        stimulus.textContent = snapshot.stimulus;
+        leftLabel.textContent = snapshot.leftLabel;
+        rightLabel.textContent = snapshot.rightLabel;
+        remaining.textContent = `本轮剩余关键词：${snapshot.remainingCount}`;
+        elapsed.textContent = `${Math.round(snapshot.elapsedMs)} ms`;
+        stimulus.classList.toggle("correct", snapshot.highlightCorrect);
+        error.classList.toggle("visible", snapshot.showError);
+        keyS.disabled = !state.canAccept();
+        keyJ.disabled = !state.canAccept();
+        blockTitle.textContent = snapshot.blockTitle;
+        blockInstruction.textContent = snapshot.blockInstruction;
+        blockCount.textContent = `本轮题数：${snapshot.blockCount}`;
+        blockIntro.classList.toggle("visible", state.blockIntroOpen);
+        skipBlock.disabled = state.blockIntroOpen;
+      }
+
+      function sendValue(value) {
+        send("streamlit:setComponentValue", { value, dataType: "json" });
+      }
+
+      state.onEvent = sendValue;
+      state.onStateChange = render;
+
+      function onKeyDown(event) {
+        if (
+          state.blockIntroOpen &&
+          event.key === "Enter" &&
+          !event.repeat
+        ) {
+          event.preventDefault();
+          blockConfirm.click();
+          return;
+        }
+        const shouldCapture =
+          !event.repeat &&
+          ["s", "S", "j", "J"].includes(event.key) &&
+          state.canAccept();
+        if (shouldCapture) event.preventDefault();
+        const events = state.handleKey(event.key, { repeat: event.repeat });
+        render();
+        for (const item of events) sendValue(item);
+      }
+
+      keyS.addEventListener("click", () => {
+        for (const item of state.handleKey("S")) sendValue(item);
+        render();
+        surface.focus({ preventScroll: true });
+      });
+      keyJ.addEventListener("click", () => {
+        for (const item of state.handleKey("J")) sendValue(item);
+        render();
+        surface.focus({ preventScroll: true });
+      });
+      blockConfirm.addEventListener("click", () => {
+        state.blockIntroOpen = false;
+        state.resetTrial();
+        render();
+        sendValue(state.makeControlEvent("block_start"));
+        surface.focus({ preventScroll: true });
+      });
+      skipBlock.addEventListener("click", () => {
+        if (state.blockIntroOpen) return;
+        sendValue(state.makeControlEvent("skip_block"));
+      });
+
+      document.addEventListener("keydown", onKeyDown);
+      let parentDocument = null;
+      try {
+        parentDocument = window.parent.document;
+        parentDocument.addEventListener("keydown", onKeyDown);
+      } catch {
+        // 跨域或沙箱限制时，iframe 自身监听仍然有效。
+      }
+
+      window.addEventListener("message", (event) => {
+        if (event.data?.type !== "streamlit:render") return;
+        render(state.configure(event.data.args ?? {}));
+        updateFrameHeight();
+        surface.focus({ preventScroll: true });
+      });
+
+      function updateFrameHeight() {
+        let viewportHeight = window.innerHeight;
+        try {
+          viewportHeight = window.parent.innerHeight;
+        } catch {
+          // iframe 高度作为回退。
+        }
+        const height = Math.min(560, Math.max(300, viewportHeight - 84));
+        surface.style.height = `${height}px`;
+        send("streamlit:setFrameHeight", { height });
+      }
+
+      function animateTimer() {
+        const snapshot = state.snapshot();
+        elapsed.textContent = `${Math.round(snapshot.elapsedMs)} ms`;
+        timerFrame = requestAnimationFrame(animateTimer);
+      }
+
+      let timerFrame = null;
+      window.addEventListener("beforeunload", () => {
+        document.removeEventListener("keydown", onKeyDown);
+        parentDocument?.removeEventListener("keydown", onKeyDown);
+        if (timerFrame !== null) cancelAnimationFrame(timerFrame);
+      });
+
+      send("streamlit:componentReady", { apiVersion: 1 });
+      updateFrameHeight();
+      window.addEventListener("resize", updateFrameHeight);
+      timerFrame = requestAnimationFrame(animateTimer);
+    </script>
+  </body>
+</html>

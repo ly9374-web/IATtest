@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text",
+          "Segoe UI", sans-serif;
+        font-size: 18px;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: transparent;
+        overflow: hidden;
+      }
+      #actions {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      button {
+        min-height: 38px;
+        padding: 0 14px;
+        border: 1px solid rgba(128, 128, 128, 0.45);
+        border-radius: 7px;
+        background: rgba(128, 128, 128, 0.08);
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
+      }
+      #feedback {
+        min-height: 18px;
+        margin-top: 8px;
+        color: rgba(128, 128, 128, 0.9);
+        font-size: 13px;
+        visibility: hidden;
+      }
+      #feedback.visible {
+        visibility: visible;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="actions">
+      <button id="copy-csv" type="button">复制 CSV</button>
+      <button id="copy-json" type="button">复制 JSON</button>
+    </div>
+    <div id="feedback" role="status">已复制到剪贴板</div>
+
+    <script>
+      let csvText = "";
+      let jsonText = "";
+      const feedback = document.getElementById("feedback");
+
+      function send(type, payload) {
+        window.parent.postMessage(
+          { isStreamlitMessage: true, type, ...payload },
+          "*",
+        );
+      }
+
+      async function copyText(text) {
+        try {
+          await navigator.clipboard.writeText(text);
+        } catch {
+          const textarea = document.createElement("textarea");
+          textarea.value = text;
+          textarea.style.position = "fixed";
+          textarea.style.opacity = "0";
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand("copy");
+          textarea.remove();
+        }
+        feedback.classList.add("visible");
+        send("streamlit:setFrameHeight", { height: 70 });
+      }
+
+      document
+        .getElementById("copy-csv")
+        .addEventListener("click", () => copyText(csvText));
+      document
+        .getElementById("copy-json")
+        .addEventListener("click", () => copyText(jsonText));
+
+      window.addEventListener("message", (event) => {
+        if (event.data?.type !== "streamlit:render") return;
+        csvText = String(event.data.args?.csv_text ?? "");
+        jsonText = String(event.data.args?.json_text ?? "");
+        send("streamlit:setFrameHeight", { height: 46 });
+      });
+
+      send("streamlit:componentReady", { apiVersion: 1 });
+      send("streamlit:setFrameHeight", { height: 46 });
+    </script>
+  </body>
+</html>
