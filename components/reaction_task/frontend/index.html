@@ -113,7 +113,7 @@
         color: inherit;
         font: inherit;
         font-size: 18px;
-        cursor: default;
+        cursor: pointer;
         z-index: 3;
       }
       #key-s {
@@ -321,6 +321,16 @@
         for (const item of events) sendValue(item);
       }
 
+      keyS.addEventListener("click", () => {
+        for (const item of state.handleKey("S")) sendValue(item);
+        render();
+        surface.focus({ preventScroll: true });
+      });
+      keyJ.addEventListener("click", () => {
+        for (const item of state.handleKey("J")) sendValue(item);
+        render();
+        surface.focus({ preventScroll: true });
+      });
       blockConfirm.addEventListener("click", () => {
         state.blockIntroOpen = false;
         state.resetTrial();
