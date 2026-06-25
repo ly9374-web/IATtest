@@ -123,7 +123,7 @@ test("external transitioning blocks keys until it ends", () => {
   assert.equal(h.state.snapshot().firstRtMs, 200);
 });
 
-test("first correct records RT once, turns green, then advances at 300ms", () => {
+test("first correct records RT once, turns green, then advances at 200ms", () => {
   const h = harness();
   h.state.configure({
     trial_id: "0:0",
@@ -141,8 +141,9 @@ test("first correct records RT once, turns green, then advances at 300ms", () =>
   assert.equal(h.state.snapshot().highlightCorrect, true);
   assert.equal(h.scheduled[0].delay, TRANSITION_MS);
 
-  h.setTime(1732.25);
+  h.setTime(1632.25);
   h.scheduled[0].callback();
+  assert.equal(h.state.snapshot().highlightCorrect, true);
   assert.equal(h.emitted.length, 1);
   assert.equal(h.emitted[0].type, "trial_complete");
   assert.equal(h.emitted[0].reason, "first_correct");

@@ -1,5 +1,5 @@
 export const EVENT_VERSION = 1;
-export const TRANSITION_MS = 300;
+export const TRANSITION_MS = 200;
 
 export function highlightInstructionSegments(text, concept) {
   const keywords = [
@@ -236,7 +236,8 @@ export class ReactionState {
           ? 0
           : Math.max(0, this.now() - this.trialStartMs),
       showError: this.phase === "error",
-      highlightCorrect: this.phase === "correct",
+      highlightCorrect:
+        this.phase === "correct" || this.phase === "transitioning",
       firstKey: this.firstKey,
       firstCorrect: this.firstCorrect,
       firstRtMs: this.firstRtMs,

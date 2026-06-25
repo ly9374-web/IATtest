@@ -46,7 +46,7 @@
 
 事件类型：
 
-- `trial_complete`：正确反馈显示 300ms 后发送一次，携带第一次 S/J
+- `trial_complete`：正确反馈显示 200ms 后发送一次，携带第一次 S/J
   按键、首次正确性和由 `performance.now()` 得到的首次反应时。首次即
   正确时
   `reason="first_correct"`；首次错误后改正时
@@ -64,10 +64,10 @@ blocked
   └─ 遮罩关闭/启用 → ready（performance.now 开始）
 
 ready
-  ├─ 第一次正确 → correct（绿色）→ 300ms → trial_complete
+  ├─ 第一次正确 → correct（绿色）→ 200ms → trial_complete
   └─ 第一次错误 → error（“错误，请改正”）
                          ├─ 错键：保持 error
-                         └─ 正确键 → correct（绿色）→ 300ms → trial_complete
+                         └─ 正确键 → correct（绿色）→ 200ms → trial_complete
 ```
 
 - `KeyboardEvent.repeat=true` 的长按重复事件被忽略。
