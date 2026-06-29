@@ -98,6 +98,8 @@ class ReportPresentationTests(unittest.TestCase):
         )
         session.report = fixed_report()
         app.session_state["concept_text"] = "环保"
+        app.session_state["employee_id"] = "A0231"
+        app.session_state["job_title"] = "设备检修"
         app.session_state["session"] = session
         app.session_state["page"] = "report"
         app.run()
@@ -142,6 +144,10 @@ class ReportPresentationTests(unittest.TestCase):
         session.report = fixed_report()
         app.session_state["concept_text"] = "环保"
         app.session_state["concept_input"] = "环保"
+        app.session_state["employee_id"] = "A0231"
+        app.session_state["employee_id_input"] = "A0231"
+        app.session_state["job_title"] = "设备检修"
+        app.session_state["job_title_input"] = "设备检修"
         app.session_state["session"] = session
         app.session_state["page"] = "report"
         app.run()
@@ -150,9 +156,13 @@ class ReportPresentationTests(unittest.TestCase):
 
         self.assertEqual(app.session_state["page"], "home")
         self.assertEqual(app.session_state["concept_text"], "")
+        self.assertEqual(app.session_state["employee_id"], "")
+        self.assertEqual(app.session_state["job_title"], "")
         self.assertIsNone(app.session_state["session"])
         self.assertIsNone(app.session_state["task_progress"])
         self.assertEqual(app.text_input(key="concept_input").value, "")
+        self.assertEqual(app.text_input(key="employee_id_input").value, "")
+        self.assertEqual(app.text_input(key="job_title_input").value, "")
 
 
 if __name__ == "__main__":

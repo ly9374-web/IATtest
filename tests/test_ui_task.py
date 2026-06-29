@@ -7,10 +7,44 @@ from streamlit.testing.v1 import AppTest
 
 
 class TaskPageTests(unittest.TestCase):
+    @staticmethod
+    def _state_value(app: AppTest, key: str) -> object:
+        try:
+            return app.session_state[key]
+        except KeyError:
+            return ""
+
+    @staticmethod
+    def _complete_countdown(app: AppTest, kind: str) -> None:
+        token = app.session_state["countdown_token"]
+        self_kind = app.session_state["countdown_kind"]
+        assert self_kind == kind
+        app.session_state["concept_input"] = TaskPageTests._state_value(
+            app,
+            "concept_text",
+        )
+        app.session_state["employee_id_input"] = TaskPageTests._state_value(
+            app,
+            "employee_id",
+        )
+        app.session_state["job_title_input"] = TaskPageTests._state_value(
+            app,
+            "job_title",
+        )
+        app.session_state["countdown_gate_main"] = {
+            "event_id": f"{token}:done",
+            "token": token,
+            "type": "countdown_complete",
+        }
+        app.run()
+
     def _open_task(self) -> AppTest:
         app = AppTest.from_file("app.py").run(timeout=10)
         app.text_input(key="concept_input").set_value("环保").run()
+        app.text_input(key="employee_id_input").set_value("A0231").run()
+        app.text_input(key="job_title_input").set_value("设备检修").run()
         app.button(key="home_start").click().run()
+        self._complete_countdown(app, "start")
         app.button(key="instruction_confirm").click().run()
         return app
 
@@ -170,6 +204,13 @@ class TaskPageTests(unittest.TestCase):
                     rt_ms=None,
                 ),
             )
+            if block_index == 3:
+                self.assertEqual(app.session_state["page"], "countdown")
+                self.assertEqual(
+                    app.session_state["countdown_kind"],
+                    "after_block_4",
+                )
+                self._complete_countdown(app, "after_block_4")
             if block_index == 6:
                 break
             self.assertEqual(app.session_state["page"], "task")
@@ -181,6 +222,9 @@ class TaskPageTests(unittest.TestCase):
                 app.session_state["task_progress"].show_block_intro
             )
 
+        self.assertEqual(app.session_state["page"], "countdown")
+        self.assertEqual(app.session_state["countdown_kind"], "after_block_7")
+        self._complete_countdown(app, "after_block_7")
         self.assertEqual(app.session_state["page"], "report")
         self.assertIsNotNone(app.session_state["session"].report)
 

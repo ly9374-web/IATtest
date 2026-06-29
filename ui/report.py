@@ -243,8 +243,8 @@ def render_report() -> None:
         _html(
             f"""
             <section class="iat-worker-card">
-                <div><span>员工编号</span><strong>A0231</strong></div>
-                <div><span>岗位</span><strong>设备检修</strong></div>
+                <div><span>员工编号</span><strong>{escape(st.session_state.employee_id or session.subject_id)}</strong></div>
+                <div><span>岗位</span><strong>{escape(st.session_state.job_title or "未填写")}</strong></div>
                 <div><span>评估日期</span><strong>{escape(report_date)}</strong></div>
                 <div class="wide"><span>评估方法</span><strong>工作 IAT + 心率 + HRV + 表情分析综合数据采集</strong></div>
             </section>

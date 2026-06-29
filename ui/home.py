@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import streamlit as st
 
+from .countdown import start_countdown
+
 
 def _spacer(size: int) -> None:
     st.markdown(
@@ -21,33 +23,54 @@ def render_home() -> None:
         )
         _spacer(44)
 
-        with st.form(key="home_start_form", border=False):
-            with st.container(key="home_input"):
-                if "concept_input" not in st.session_state:
-                    st.session_state.concept_input = (
-                        st.session_state.concept_text
-                    )
-                st.text_input(
-                    "测试目标",
-                    placeholder="输入测试目标（例如：环保）",
-                    key="concept_input",
-                    label_visibility="collapsed",
+        with st.container(key="home_input"):
+            if "concept_input" not in st.session_state:
+                st.session_state.concept_input = st.session_state.concept_text
+            if "employee_id_input" not in st.session_state:
+                st.session_state.employee_id_input = (
+                    st.session_state.employee_id
                 )
-            _spacer(44)
+            if "job_title_input" not in st.session_state:
+                st.session_state.job_title_input = st.session_state.job_title
+            concept_input = st.text_input(
+                "测试目标",
+                placeholder="输入测试目标（例如：环保）",
+                key="concept_input",
+                label_visibility="collapsed",
+            )
+            employee_id_input = st.text_input(
+                "工号",
+                placeholder="输入工号",
+                key="employee_id_input",
+                label_visibility="collapsed",
+            )
+            job_title_input = st.text_input(
+                "岗位",
+                placeholder="输入岗位",
+                key="job_title_input",
+                label_visibility="collapsed",
+            )
+        _spacer(44)
 
-            with st.container(key="home_start_container"):
-                start_clicked = st.form_submit_button(
-                    "开始",
-                    key="home_start",
-                    type="primary",
-                    shortcut="Enter",
-                )
-            if start_clicked and st.session_state.concept_input.strip():
-                st.session_state.concept_text = (
-                    st.session_state.concept_input
-                )
-                st.session_state.page = "instruction"
-                st.rerun()
+        can_start = bool(
+            concept_input.strip()
+            and employee_id_input.strip()
+            and job_title_input.strip()
+        )
+        with st.container(key="home_start_container"):
+            start_clicked = st.button(
+                "开始",
+                key="home_start",
+                type="primary",
+                shortcut="Enter",
+                disabled=not can_start,
+            )
+        if start_clicked and can_start:
+            st.session_state.concept_text = concept_input
+            st.session_state.employee_id = employee_id_input
+            st.session_state.job_title = job_title_input
+            start_countdown(kind="start", next_page="instruction")
+            st.rerun()
 
         _spacer(44)
         st.markdown(

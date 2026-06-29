@@ -6,12 +6,19 @@ import streamlit as st
 
 from components.reaction_task import consume_new_event, reaction_task
 from iat_core.task_flow import block_instruction_text
+from .countdown import start_countdown
 
 
-def _finish_or_rerun(finished: bool) -> None:
+def _after_block_transition(
+    *,
+    completed_block_id: int,
+    finished: bool,
+) -> None:
     st.session_state.last_reaction_event = None
     if finished:
-        st.session_state.page = "report"
+        start_countdown(kind="after_block_7", next_page="report")
+    elif completed_block_id == 4:
+        start_countdown(kind="after_block_4", next_page="task")
     st.rerun()
 
 
@@ -58,8 +65,12 @@ def render_task() -> None:
             progress.confirm_block_intro()
             st.rerun()
         if new_event.type == "skip_block":
+            completed_block_id = block.id
             finished = progress.skip_current_block(session)
-            _finish_or_rerun(finished)
+            _after_block_transition(
+                completed_block_id=completed_block_id,
+                finished=finished,
+            )
         if (
             new_event.first_key is None
             or new_event.is_correct is None
@@ -74,4 +85,7 @@ def render_task() -> None:
             rt_ms=new_event.rt_ms,
         )
         if outcome.advanced:
-            _finish_or_rerun(outcome.finished)
+            _after_block_transition(
+                completed_block_id=block.id,
+                finished=outcome.finished,
+            )

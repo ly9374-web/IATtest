@@ -8,6 +8,13 @@ import streamlit as st
 DEFAULT_STATE: dict[str, object] = {
     "page": "home",
     "concept_text": "",
+    "employee_id": "",
+    "job_title": "",
+    "countdown_token": "",
+    "countdown_kind": "",
+    "countdown_next_page": "",
+    "countdown_sequence": 0,
+    "last_countdown_event_id": None,
     "session": None,
     "task_progress": None,
     "last_reaction_event_id": None,
@@ -28,12 +35,39 @@ def repair_route_state() -> None:
     浏览器刷新会创建新的 Streamlit 会话并自然回到 home；若 rerun 或
     恢复状态时出现不完整的 task/report，则退回最近的完整页面。
     """
-    valid_pages = {"home", "instruction", "task", "report"}
+    valid_pages = {"home", "countdown", "instruction", "task", "report"}
     if st.session_state.page not in valid_pages:
         st.session_state.page = "home"
 
-    has_concept = bool(st.session_state.concept_text.strip())
-    if st.session_state.page == "instruction" and not has_concept:
+    has_required_home_fields = bool(
+        st.session_state.concept_text.strip()
+        and st.session_state.employee_id.strip()
+        and st.session_state.job_title.strip()
+    )
+    if st.session_state.page == "countdown":
+        next_page = st.session_state.countdown_next_page
+        if next_page not in {"instruction", "task", "report"}:
+            st.session_state.page = "home"
+            return
+        if not has_required_home_fields:
+            st.session_state.page = "home"
+            return
+        if next_page == "task" and (
+            st.session_state.session is None
+            or st.session_state.task_progress is None
+        ):
+            st.session_state.page = "instruction"
+            return
+        if next_page == "report":
+            session = st.session_state.session
+            if session is None:
+                st.session_state.page = "instruction"
+                return
+            if session.report is None:
+                st.session_state.page = "task"
+                return
+
+    if st.session_state.page == "instruction" and not has_required_home_fields:
         st.session_state.page = "home"
         return
 
@@ -41,13 +75,17 @@ def repair_route_state() -> None:
         st.session_state.session is None
         or st.session_state.task_progress is None
     ):
-        st.session_state.page = "instruction" if has_concept else "home"
+        st.session_state.page = (
+            "instruction" if has_required_home_fields else "home"
+        )
         return
 
     if st.session_state.page == "report":
         session = st.session_state.session
         if session is None:
-            st.session_state.page = "instruction" if has_concept else "home"
+            st.session_state.page = (
+                "instruction" if has_required_home_fields else "home"
+            )
         elif session.report is None:
             st.session_state.page = "task"
 
@@ -56,8 +94,17 @@ def reset_for_retest() -> None:
     """清除一次测试的全部运行状态。"""
     st.session_state.page = "home"
     st.session_state.concept_text = ""
+    st.session_state.employee_id = ""
+    st.session_state.job_title = ""
+    st.session_state.countdown_token = ""
+    st.session_state.countdown_kind = ""
+    st.session_state.countdown_next_page = ""
+    st.session_state.countdown_sequence = 0
+    st.session_state.last_countdown_event_id = None
     st.session_state.session = None
     st.session_state.task_progress = None
     st.session_state.last_reaction_event_id = None
     st.session_state.last_reaction_event = None
     st.session_state.pop("concept_input", None)
+    st.session_state.pop("employee_id_input", None)
+    st.session_state.pop("job_title_input", None)
