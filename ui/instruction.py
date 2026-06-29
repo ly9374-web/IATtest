@@ -27,7 +27,6 @@ def _start_session() -> None:
     session = IATSession.create(
         concept=st.session_state.concept_text,
         is_precise_mode=True,
-        custom_config=st.session_state.pending_custom_config,
     )
     st.session_state.session = session
     st.session_state.task_progress = TaskProgress()

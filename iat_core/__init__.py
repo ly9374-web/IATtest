@@ -7,8 +7,6 @@ from .models import (
     CleanedSet,
     CleanedTrial,
     ConditionType,
-    CustomPreset,
-    CustomWordConfig,
     ExportTrial,
     IATBlock,
     IATTrial,
@@ -21,7 +19,6 @@ from .exporter import ExportBuilder, ExportResult
 from .scoring import DataCleaner, IATReport, Stats
 from .session import IATSession
 from .stimuli import StimulusBank
-from .preset_store import CustomPresetStore
 from .task_flow import TaskEventOutcome, TaskProgress, block_instruction_text
 
 __all__ = [
@@ -30,9 +27,6 @@ __all__ = [
     "CleanedSet",
     "CleanedTrial",
     "ConditionType",
-    "CustomPreset",
-    "CustomPresetStore",
-    "CustomWordConfig",
     "DataCleaner",
     "ExportBuilder",
     "ExportResult",

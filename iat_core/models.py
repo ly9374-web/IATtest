@@ -3,70 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from enum import Enum
 import random
-import uuid
-
-
-@dataclass(slots=True)
-class CustomPreset:
-    """对应 Swift ``CustomPreset`` 的可持久化预设。"""
-
-    id: str
-    positive_text: str
-    negative_text: str
-    yy_text: str
-    zz_text: str
-    updated_at: str
-
-    @classmethod
-    def create(
-        cls,
-        *,
-        positive_text: str,
-        negative_text: str,
-        yy_text: str,
-        zz_text: str,
-    ) -> CustomPreset:
-        return cls(
-            id=str(uuid.uuid4()),
-            positive_text=positive_text,
-            negative_text=negative_text,
-            yy_text=yy_text,
-            zz_text=zz_text,
-            updated_at=datetime.now(timezone.utc).isoformat(),
-        )
-
-    @property
-    def display_name(self) -> str:
-        left = self.yy_text.strip()
-        right = self.zz_text.strip()
-        if not left and not right:
-            return "未命名"
-        return f"{left or 'yy'}/{right or 'zz'}"
-
-
-@dataclass(frozen=True, slots=True)
-class CustomWordConfig:
-    """用户提供的正负刺激词和报告解释用语。"""
-
-    positives: tuple[str, ...]
-    negatives: tuple[str, ...]
-    yy_text: str
-    zz_text: str
-
-    def __init__(
-        self,
-        positives: tuple[str, ...] | list[str],
-        negatives: tuple[str, ...] | list[str],
-        yy_text: str,
-        zz_text: str,
-    ) -> None:
-        object.__setattr__(self, "positives", tuple(positives))
-        object.__setattr__(self, "negatives", tuple(negatives))
-        object.__setattr__(self, "yy_text", yy_text)
-        object.__setattr__(self, "zz_text", zz_text)
 
 
 class BlockType(str, Enum):

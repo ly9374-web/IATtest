@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 
 from .block_factory import IATBlockFactory, SeededRandomNumberGenerator
 from .constants import DEFAULT_LINK_NEGATIVE, DEFAULT_LINK_POSITIVE
-from .models import CustomWordConfig, IATBlock, TrialResponse
+from .models import IATBlock, TrialResponse
 from .stimuli import StimulusBank
 
 if TYPE_CHECKING:
@@ -46,7 +46,6 @@ class IATSession:
         cls,
         concept: str,
         is_precise_mode: bool,
-        custom_config: CustomWordConfig | None = None,
         *,
         seed: int | None = None,
         subject_id: str | None = None,
@@ -63,18 +62,7 @@ class IATSession:
         order_condition = 1 if rng.random_bool() else 2
         position_condition = 1 if rng.random_bool() else 2
 
-        link_positive = (
-            custom_config.yy_text
-            if custom_config is not None and custom_config.yy_text
-            else DEFAULT_LINK_POSITIVE
-        )
-        link_negative = (
-            custom_config.zz_text
-            if custom_config is not None and custom_config.zz_text
-            else DEFAULT_LINK_NEGATIVE
-        )
-
-        stimuli = StimulusBank.create(concept, custom_config)
+        stimuli = StimulusBank.create(concept)
         blocks = IATBlockFactory.make_blocks(
             stimuli=stimuli,
             order_condition=order_condition,
@@ -93,8 +81,8 @@ class IATSession:
             order_condition=order_condition,
             position_condition=position_condition,
             is_precise_mode=is_precise_mode,
-            link_positive=link_positive,
-            link_negative=link_negative,
+            link_positive=DEFAULT_LINK_POSITIVE,
+            link_negative=DEFAULT_LINK_NEGATIVE,
             blocks=blocks,
             responses=responses,
         )

@@ -88,7 +88,7 @@ class ReportPresentationTests(unittest.TestCase):
         self.assertEqual(svg.count('fill="#ff3b30"'), 2)
         self.assertIn('d="M 32 216 H 792 M 32 8 V 216"', svg)
 
-    def test_report_page_order_values_and_export_payloads(self) -> None:
+    def test_report_page_renders_safety_layout_and_iat_values(self) -> None:
         app = AppTest.from_file("app.py").run(timeout=10)
         session = IATSession.create(
             concept="环保",
@@ -104,39 +104,34 @@ class ReportPresentationTests(unittest.TestCase):
 
         self.assertEqual(len(app.exception), 0)
         markdown = [item.value for item in app.markdown]
-        title_positions = [
-            next(
-                index
-                for index, value in enumerate(markdown)
-                if f">{title}<" in value
-            )
-            for title in ("结果解释", "统计数据", "散点图", "导出")
-        ]
-        self.assertEqual(title_positions, sorted(title_positions))
         joined = "\n".join(markdown)
-        self.assertIn("你喜欢环保", joined)
-        self.assertIn("兼容正式首此眼动错误概率：25.0%", joined)
-        self.assertIn("不兼容正式首此眼动错误概率：50.0%", joined)
-        self.assertIn("600 ms / 25.0%", joined)
-        self.assertIn("1000 ms / 50.0%", joined)
-        self.assertIn("|D|：0.40 (中等偏好)", joined)
+        expected_order = [
+            "作业人员心理安全辅助评估报告",
+            "综合风险提示",
+            "核心数据概览",
+            "散点图",
+            "负面表情",
+            "维度详情分析",
+        ]
+        positions = [joined.index(text) for text in expected_order]
+        self.assertEqual(positions, sorted(positions))
+        self.assertIn("员工编号", joined)
+        self.assertIn("A0231", joined)
+        self.assertIn("岗位", joined)
+        self.assertIn("设备检修", joined)
+        self.assertIn("D_work: 0.40", joined)
+        self.assertIn("环保与负面词汇反应时变长（40%）", joined)
+        self.assertIn("对环保正面态度显著度：中", joined)
+        self.assertIn("心率变异性（HRV）", joined)
+        self.assertIn("职业倦怠风险", joined)
+        self.assertIn('data-point-count="4"', joined)
 
-        components = app.get("component_instance")
-        self.assertEqual(len(components), 1)
-        args = json.loads(components[0].proto.json_args)
-        self.assertEqual(args["csv_text"], fixed_report().csv_text)
-        self.assertEqual(args["json_text"], fixed_report().json_text)
-
-        iframe_nodes = app.get("iframe")
-        self.assertEqual(len(iframe_nodes), 1)
-        self.assertIn(
-            "data-point-count%3D%224%22",
-            iframe_nodes[0].proto.src,
-        )
+        self.assertEqual(len(app.get("component_instance")), 0)
+        self.assertEqual(len(app.get("iframe")), 0)
 
         self.assertEqual(app.button(key="report_retest").label, "重新测试")
 
-    def test_retest_returns_home_and_preserves_saved_presets(self) -> None:
+    def test_retest_returns_home(self) -> None:
         app = AppTest.from_file("app.py").run(timeout=10)
         session = IATSession.create(
             concept="环保",
@@ -145,7 +140,6 @@ class ReportPresentationTests(unittest.TestCase):
             subject_id="subject",
         )
         session.report = fixed_report()
-        presets = list(app.session_state["presets"])
         app.session_state["concept_text"] = "环保"
         app.session_state["concept_input"] = "环保"
         app.session_state["session"] = session
@@ -158,7 +152,6 @@ class ReportPresentationTests(unittest.TestCase):
         self.assertEqual(app.session_state["concept_text"], "")
         self.assertIsNone(app.session_state["session"])
         self.assertIsNone(app.session_state["task_progress"])
-        self.assertEqual(app.session_state["presets"], presets)
         self.assertEqual(app.text_input(key="concept_input").value, "")
 
 

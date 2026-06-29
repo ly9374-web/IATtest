@@ -12,8 +12,8 @@ Python + Streamlit 应用。
 - 实现七个 Block、试次生成、会话创建与反应记录；
 - 实现正式 Block 数据清洗、统计、D 值和报告生成；
 - 实现与 Swift 字段一致的 CSV、JSON 导出；
-- 实现 Streamlit 首页、自定义预设弹窗和 JSON 本地持久化；
-- 使用 `session_state` 管理首页、弹窗、输入和历史选择状态；
+- 实现 Streamlit 首页；
+- 使用 `session_state` 管理首页输入和测试状态；
 - 实现 `home / instruction / task / report` 单入口状态路由；
 - 实现总说明页、返回导航、35%/65% 竖向虚线和 Enter 确认；
 - 在进入 task 前原子化创建会话，并修复不完整路由状态；

@@ -94,29 +94,22 @@ def apply_global_styles() -> None:
             border-radius: 6px;
         }
 
-        .st-key-home_start_container,
-        .st-key-home_custom_container {
+        .st-key-home_start_container {
             width: 160px;
             margin: 0 auto;
         }
 
-        .st-key-home_start_container .stButton,
-        .st-key-home_custom_container .stButton {
+        .st-key-home_start_container .stButton {
             width: 160px;
         }
 
-        .st-key-home_start_container button,
-        .st-key-home_custom_container button {
+        .st-key-home_start_container button {
             width: 160px !important;
             padding: 0 !important;
         }
 
         .st-key-home_start_container button {
             height: 48px !important;
-        }
-
-        .st-key-home_custom_container button {
-            height: 44px !important;
         }
 
         .iat-home-hints {
@@ -220,78 +213,372 @@ def apply_global_styles() -> None:
         }
 
         .st-key-report_shell {
-            margin: 0 -32px;
-            padding: 24px;
+            width: min(100%, 1180px);
+            margin: 0 auto;
+            padding: 54px 48px 42px;
+            background: #ffffff;
+            color: #20242a;
         }
 
-        .st-key-report_interpretation,
-        .st-key-report_statistics,
-        .st-key-report_scatter {
-            margin-bottom: 20px;
-        }
-
-        .iat-report-section-title {
-            font-size: 18px;
-            line-height: 22px;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-
-        .iat-report-interpretation {
-            color: #22a447;
-            font-size: 21px;
-            line-height: 26px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-
-        .iat-report-secondary {
-            color: var(--iat-secondary);
-            font-size: 18px;
-            line-height: 22px;
-            margin-bottom: 8px;
-        }
-
-        .iat-stat-row {
+        .iat-safety-header {
             display: flex;
-            align-items: center;
             justify-content: space-between;
-            gap: 24px;
-            min-height: 30px;
-            font-size: 18px;
-            line-height: 1.35;
+            gap: 32px;
         }
 
-        .iat-stat-row span {
+        .iat-safety-header h1 {
+            margin: 0;
+            font-size: 42px;
+            line-height: 1.12;
+            font-weight: 500;
+            letter-spacing: 0;
+        }
+
+        .iat-safety-header p {
+            margin: 22px 0 0;
+            color: #737985;
+            font-size: 19px;
+        }
+
+        .iat-report-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 12px;
+            color: #6f7480;
+            font-size: 16px;
+            white-space: nowrap;
+        }
+
+        .iat-report-meta span {
+            padding: 8px 16px;
+            border-radius: 3px;
+            background: #e0e2e6;
+            color: #5b606a;
+            font-weight: 600;
+        }
+
+        .iat-report-rule {
+            height: 1px;
+            background: #c8ccd6;
+            margin: 36px 0 36px;
+        }
+
+        .iat-risk-banner {
+            display: flex;
+            align-items: flex-start;
+            gap: 18px;
+            padding: 28px 28px;
+            background: #ffd9d6;
+            border-radius: 4px;
+            color: #a30012;
+        }
+
+        .iat-risk-icon {
+            font-size: 30px;
+            line-height: 1;
+            margin-top: 4px;
+        }
+
+        .iat-risk-banner h2 {
+            margin: 0 0 12px;
+            font-size: 24px;
+            font-weight: 500;
+        }
+
+        .iat-risk-banner p {
+            margin: 0;
+            font-size: 19px;
+            font-weight: 500;
+        }
+
+        .iat-worker-card {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 34px 72px;
+            margin-top: 34px;
+            padding: 34px 28px 30px;
+            border: 1px solid #bfc5d3;
+            border-radius: 4px;
+            background: #fafbfe;
+        }
+
+        .iat-worker-card div {
             min-width: 0;
         }
 
-        .iat-stat-row strong {
-            flex: 0 0 auto;
-            text-align: right;
+        .iat-worker-card .wide {
+            grid-column: 1 / -1;
+        }
+
+        .iat-worker-card span {
+            display: block;
+            color: #7b808b;
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .iat-worker-card strong {
+            display: block;
+            margin-top: 12px;
+            font-size: 20px;
+            line-height: 1.35;
+            font-weight: 500;
+        }
+
+        .iat-overview {
+            margin-top: 46px;
+        }
+
+        .iat-overview h2,
+        .iat-analysis h2 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0 0 24px;
+            font-size: 28px;
+            line-height: 1.2;
+            font-weight: 500;
+        }
+
+        .iat-overview h2 span,
+        .iat-analysis h2 span {
+            color: #727884;
+            font-size: 24px;
+        }
+
+        .iat-overview-grid {
+            display: grid;
+            grid-template-columns: 22% 54% 24%;
+            width: 100%;
+            font-size: 16px;
+        }
+
+        .iat-overview-cell {
+            padding: 18px 10px;
+            border-bottom: 1px solid #dcdfe6;
+            line-height: 1.4;
+            min-width: 0;
+        }
+
+        .iat-overview-cell.head {
+            padding-top: 0;
+            padding-bottom: 14px;
+            border-bottom-color: #cdd2dc;
+            color: #7b808b;
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .iat-overview-cell.eval {
+            color: #4f5561;
+        }
+
+        .iat-chart-section {
+            margin-top: 34px;
+            position: relative;
+        }
+
+        .iat-chart-section h3 {
+            margin: 0 0 12px;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .iat-real-scatter {
+            padding: 0 28px;
+        }
+
+        .iat-real-scatter .iat-scatter-chart {
+            width: 100%;
+            height: 240px;
+        }
+
+        .iat-real-scatter .iat-scatter-chart svg {
+            display: block;
+            width: 100%;
+            height: 240px;
+        }
+
+        .iat-chart-tab {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 90px;
+            height: 28px;
+            margin-left: 10px;
+            border: 1px solid #d6d9e0;
+            border-radius: 6px;
+            color: #1f242b;
+            background: #ffffff;
+            font-weight: 700;
+            font-size: 15px;
+        }
+
+        .iat-chart-tab.blue {
+            margin-left: 14px;
+            padding: 0 18px;
+            border-radius: 0;
+            border-color: #2f76ef;
+            background: #2f76ef;
+            color: #ffffff;
+        }
+
+        .iat-hr-chart,
+        .iat-expression-chart {
+            display: block;
+            width: 100%;
+            height: auto;
+            margin-top: 8px;
+            border: 1px solid rgba(221, 224, 231, 0.9);
+        }
+
+        .iat-hr-chart {
+            border: 0;
+        }
+
+        .iat-hr-chart .grid path,
+        .iat-expression-chart .grid path {
+            fill: none;
+            stroke: #d9dde5;
+            stroke-width: 1;
+            stroke-dasharray: 4 4;
+        }
+
+        .iat-hr-chart .axis,
+        .iat-expression-chart .axis {
+            fill: none;
+            stroke: #6d7178;
+            stroke-width: 2;
+        }
+
+        .iat-hr-chart .hr-line {
+            fill: none;
+            stroke: #2c73ff;
+            stroke-width: 2.5;
+        }
+
+        .iat-hr-chart text,
+        .iat-expression-chart text {
+            fill: #2c3037;
+            font-size: 13px;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text",
+                         "Segoe UI", sans-serif;
+        }
+
+        .iat-expression-chart .bars rect {
+            fill: #2d73ea;
+        }
+
+        .iat-expression-chart .bars text {
+            font-size: 15px;
             font-weight: 600;
         }
 
-        .iat-scatter-chart {
-            width: 100%;
-            height: 240px;
+        .iat-analysis {
+            margin-top: 44px;
         }
 
-        .iat-scatter-chart svg {
-            display: block;
-            width: 100%;
-            height: 240px;
+        .iat-analysis-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 34px 28px;
         }
 
-        .st-key-report_export iframe {
-            display: block;
-            width: 100% !important;
-            border: 0 !important;
+        .iat-analysis-card {
+            border: 1px solid #c5cad5;
+            border-radius: 4px;
+            padding: 26px 28px 24px;
+            min-height: 218px;
+        }
+
+        .iat-analysis-card.danger {
+            border: 2px solid #d92828;
+        }
+
+        .iat-analysis-card.warning {
+            border-color: #6f2a04;
+            box-shadow: inset 4px 0 0 #6f2a04;
+        }
+
+        .iat-analysis-card.compact {
+            min-height: 170px;
+        }
+
+        .iat-analysis-card .card-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 22px;
+        }
+
+        .iat-analysis-card h3 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 500;
+        }
+
+        .iat-analysis-card .card-head span {
+            padding: 6px 12px;
+            border-radius: 3px;
+            background: #e1e3e7;
+            color: #555b66;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        .iat-analysis-card.danger .card-head span {
+            background: #ffdede;
+            color: #cf1f1f;
+        }
+
+        .iat-analysis-card.warning .card-head span {
+            background: #743000;
+            color: #ffcda7;
+        }
+
+        .iat-analysis-card p {
+            margin: 0;
+            font-size: 16px;
+            line-height: 1.55;
+        }
+
+        .iat-analysis-card .eyebrow {
+            color: #818690;
+            margin-bottom: 8px;
+        }
+
+        .iat-analysis-card .eyebrow.warn {
+            color: #a12020;
+        }
+
+        .iat-analysis-card .card-rule {
+            height: 1px;
+            margin: 24px 0 20px;
+            background: #dedfe5;
+        }
+
+        .iat-safety-footer {
+            margin-top: 56px;
+            padding-top: 28px;
+            border-top: 1px solid #d8dce5;
+            text-align: center;
+            color: #888e99;
+        }
+
+        .iat-safety-footer p {
+            margin: 0;
+            font-size: 15px;
+        }
+
+        .iat-safety-footer small {
+            display: none;
         }
 
         .st-key-report_retest_container {
             width: 120px;
-            margin: 20px 0 0 auto;
+            margin: 16px auto 32px;
         }
 
         .st-key-report_retest_container .stButton {

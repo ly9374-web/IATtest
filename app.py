@@ -2,7 +2,6 @@
 
 import streamlit as st
 
-from iat_core.preset_store import CustomPresetStore
 from ui.router import render_current_page
 from ui.state import initialize_state
 from ui.styles import apply_global_styles
@@ -15,10 +14,9 @@ def main() -> None:
         layout="wide",
         initial_sidebar_state="collapsed",
     )
-    store = CustomPresetStore()
-    initialize_state(store)
+    initialize_state()
     apply_global_styles()
-    render_current_page(store)
+    render_current_page()
 
 
 if __name__ == "__main__":

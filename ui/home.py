@@ -4,10 +4,6 @@ from __future__ import annotations
 
 import streamlit as st
 
-from iat_core.preset_store import CustomPresetStore
-from .custom_dialog import render_custom_dialog
-from .state import resolved_custom_config
-
 
 def _spacer(size: int) -> None:
     st.markdown(
@@ -16,7 +12,7 @@ def _spacer(size: int) -> None:
     )
 
 
-def render_home(store: CustomPresetStore) -> None:
+def render_home() -> None:
     st.markdown('<div class="iat-nav-title">IAT 测试</div>', unsafe_allow_html=True)
     with st.container(key="home_shell"):
         st.markdown(
@@ -50,16 +46,7 @@ def render_home(store: CustomPresetStore) -> None:
                 st.session_state.concept_text = (
                     st.session_state.concept_input
                 )
-                st.session_state.pending_custom_config = (
-                    resolved_custom_config()
-                )
                 st.session_state.page = "instruction"
-                st.rerun()
-
-        _spacer(44)
-        with st.container(key="home_custom_container"):
-            if st.button("自定义", key="home_custom"):
-                st.session_state.custom_dialog_open = True
                 st.rerun()
 
         _spacer(44)
@@ -75,6 +62,3 @@ def render_home(store: CustomPresetStore) -> None:
             """,
             unsafe_allow_html=True,
         )
-
-    if st.session_state.custom_dialog_open:
-        render_custom_dialog(store)

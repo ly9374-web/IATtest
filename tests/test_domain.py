@@ -5,7 +5,6 @@ from collections import Counter
 
 from iat_core import (
     BlockType,
-    CustomWordConfig,
     IATSession,
     SeededRandomNumberGenerator,
     StimulusBank,
@@ -58,18 +57,6 @@ class StimulusBankTests(unittest.TestCase):
         self.assertEqual(len(bank.negatives), 22)
         self.assertEqual(bank.positives.count("幸福"), 2)
         self.assertEqual(bank.positives.count("美好"), 2)
-
-    def test_custom_lists_fall_back_independently(self) -> None:
-        config = CustomWordConfig(
-            positives=["甲", "乙"],
-            negatives=[],
-            yy_text="赞同",
-            zz_text="反对",
-        )
-        bank = StimulusBank.create("概念", config)
-        self.assertEqual(bank.positives, ("甲", "乙"))
-        self.assertEqual(bank.negatives, DEFAULT_NEGATIVE_WORDS)
-
 
 class BlockFactoryTests(unittest.TestCase):
     def setUp(self) -> None:

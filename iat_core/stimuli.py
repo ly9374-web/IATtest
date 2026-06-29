@@ -1,4 +1,4 @@
-"""刺激词库及自定义词的回退规则。"""
+"""刺激词库。"""
 
 from __future__ import annotations
 
@@ -9,7 +9,6 @@ from .constants import (
     DEFAULT_POSITIVE_WORDS,
     NEUTRAL_WORDS,
 )
-from .models import CustomWordConfig
 
 
 @dataclass(frozen=True, slots=True)
@@ -20,24 +19,9 @@ class StimulusBank:
     neutrals: tuple[str, ...] = NEUTRAL_WORDS
 
     @classmethod
-    def create(
-        cls,
-        concept: str,
-        custom_config: CustomWordConfig | None = None,
-    ) -> StimulusBank:
-        positives = (
-            custom_config.positives
-            if custom_config is not None and custom_config.positives
-            else DEFAULT_POSITIVE_WORDS
-        )
-        negatives = (
-            custom_config.negatives
-            if custom_config is not None and custom_config.negatives
-            else DEFAULT_NEGATIVE_WORDS
-        )
+    def create(cls, concept: str) -> StimulusBank:
         return cls(
             concept=concept,
-            positives=tuple(positives),
-            negatives=tuple(negatives),
+            positives=DEFAULT_POSITIVE_WORDS,
+            negatives=DEFAULT_NEGATIVE_WORDS,
         )
-
